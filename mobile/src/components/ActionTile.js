@@ -11,7 +11,7 @@ export default function ActionTile({ glyph, label, onPress, onBrand = false }) {
       style={({ pressed }) => [styles.wrap, pressed && { opacity: 0.6 }]}
     >
       <View style={[styles.circle, onBrand ? styles.onBrand : styles.light]}>
-        <Glyph name={glyph} color={onBrand ? '#fff' : colors.primary} size={24} />
+        <Glyph name={glyph} color={colors.primary} size={24} />
       </View>
       <Text style={[styles.label, { color: onBrand ? '#fff' : colors.text }]} numberOfLines={1}>
         {label}
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10,
   },
-  onBrand: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  onBrand: { backgroundColor: 'rgba(35,211,168,0.18)' },
   light: { backgroundColor: colors.primarySoft },
   label: { fontSize: 12.5, fontFamily: ff.semibold },
 });

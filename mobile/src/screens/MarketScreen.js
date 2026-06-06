@@ -182,7 +182,7 @@ function OppsList({ items }) {
 function Seg({ label, icon, active, onPress }) {
   return (
     <Pressable onPress={onPress} style={[styles.seg, active && styles.segActive]}>
-      <Glyph name={icon} color={active ? '#fff' : colors.textMuted} size={17} />
+      <Glyph name={icon} color={active ? colors.textOnTeal : colors.textMuted} size={17} />
       <Text style={[styles.segText, active && styles.segTextActive]}>{label}</Text>
     </Pressable>
   );
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   regionActive: { backgroundColor: colors.primary },
   regionText: { fontFamily: ff.semibold, fontSize: 13.5, color: colors.text },
-  regionTextActive: { color: '#fff' },
+  regionTextActive: { color: colors.textOnTeal },
   segment: {
     flexDirection: 'row',
     backgroundColor: colors.bgSoft,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
   segActive: { backgroundColor: colors.primary },
   segText: { fontFamily: ff.semibold, fontSize: 14, color: colors.textMuted },
-  segTextActive: { color: '#fff' },
+  segTextActive: { color: colors.textOnTeal },
   article: { flexDirection: 'row', overflow: 'hidden', alignItems: 'center' },
   articleImg: { width: 92, height: 92, backgroundColor: colors.bgSoft },
   articleSource: { fontFamily: ff.semibold, fontSize: 11.5, color: colors.primary, marginBottom: 4 },

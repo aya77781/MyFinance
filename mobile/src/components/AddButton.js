@@ -24,6 +24,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hbar: { position: 'absolute', width: 18, height: 2.5, borderRadius: 2, backgroundColor: '#fff' },
-  vbar: { position: 'absolute', width: 2.5, height: 18, borderRadius: 2, backgroundColor: '#fff' },
+  hbar: { position: 'absolute', width: 18, height: 2.5, borderRadius: 2, backgroundColor: colors.textOnTeal },
+  vbar: { position: 'absolute', width: 2.5, height: 18, borderRadius: 2, backgroundColor: colors.textOnTeal },
 });

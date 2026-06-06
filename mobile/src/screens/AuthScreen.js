@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, spacing, radius, font, ff, brandGradient } from '../theme';
 import Button from '../components/Button';
+import { LogoMark, Wordmark } from '../components/Logo';
 import { useAuth } from '../AuthContext';
 
 export default function AuthScreen() {
@@ -55,8 +56,10 @@ export default function AuthScreen() {
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 60 }]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.brandMark} />
-        <Text style={styles.brand}>Finance</Text>
+        <LogoMark size={58} />
+        <View style={{ marginTop: spacing.lg }}>
+          <Wordmark size={34} />
+        </View>
         <Text style={styles.tagline}>Tes revenus, charges, epargnes et challenges, au meme endroit.</Text>
 
         <View style={styles.card}>
@@ -133,35 +136,30 @@ function Field({ label, ...props }) {
 
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
-  brandMark: {
-    width: 46,
-    height: 46,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    marginBottom: spacing.md,
-  },
-  brand: { color: '#fff', fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
-  tagline: { color: colors.textOnBrandMuted, fontSize: 15, marginTop: 6, marginBottom: spacing.xl, lineHeight: 21 },
+  tagline: { color: colors.textOnBrandMuted, fontSize: 15, marginTop: spacing.md, marginBottom: spacing.xl, lineHeight: 21, fontFamily: ff.medium },
   card: {
-    backgroundColor: colors.bg,
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   cardSub: { ...font.caption, marginTop: 4, marginBottom: spacing.lg },
   field: { marginBottom: spacing.lg },
   label: { ...font.label, marginBottom: spacing.sm },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.bgSoft,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     height: 52,
     fontSize: 16,
+    fontFamily: ff.medium,
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  error: { color: colors.negative, fontWeight: '600', marginTop: spacing.sm },
+  error: { color: colors.negative, fontFamily: ff.semibold, marginTop: spacing.sm },
   switch: { marginTop: spacing.lg, alignItems: 'center' },
-  switchText: { color: colors.textMuted, fontSize: 14, fontWeight: '500' },
-  switchLink: { color: colors.primary, fontWeight: '700' },
+  switchText: { color: colors.textMuted, fontSize: 14, fontFamily: ff.medium },
+  switchLink: { color: colors.primary, fontFamily: ff.bold },
 });

@@ -37,8 +37,8 @@ export default function Tabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#fff',
-        tabBarInactiveTintColor: '#7C7C8A',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: '#6E7C90',
         tabBarShowLabel: true,
         tabBarStyle: {
           position: 'absolute',
@@ -47,8 +47,10 @@ export default function Tabs() {
           bottom: Math.max(insets.bottom, 12),
           height: 64,
           borderRadius: 32,
-          backgroundColor: '#0E0E12',
-          borderTopWidth: 0,
+          backgroundColor: '#161F2D',
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderTopWidth: 1,
           paddingHorizontal: 8,
           paddingTop: 9,
           paddingBottom: 9,
@@ -59,7 +61,7 @@ export default function Tabs() {
           elevation: 10,
         },
         tabBarItemStyle: { borderRadius: 20, marginHorizontal: 2 },
-        tabBarActiveBackgroundColor: 'rgba(255,255,255,0.12)',
+        tabBarActiveBackgroundColor: 'rgba(35,211,168,0.16)',
         tabBarLabel: LABELS[route.name],
         tabBarLabelStyle: { fontFamily: ff.semibold, fontSize: 9.5, marginTop: -2 },
         tabBarIcon: ({ color }) => <Glyph name={ICONS[route.name]} color={color} size={21} />,

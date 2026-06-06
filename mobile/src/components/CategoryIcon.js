@@ -9,7 +9,7 @@ export default function CategoryIcon({ name, color = '#1F3BE0', glyph, size = 46
     <View
       style={[
         styles.tile,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: `${color}1A` },
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: `${color}2E` },
         style,
       ]}
     >

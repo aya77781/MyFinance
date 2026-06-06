@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { colors, radius, spacing, font } from '../theme';
+import { colors, radius, spacing, font, ff } from '../theme';
 import Button from './Button';
 
 // Formulaire modal generique pilote par une config de champs.
@@ -117,12 +117,14 @@ export default function FormSheet({
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(10,10,20,0.45)', justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(4,8,14,0.6)', justifyContent: 'flex-end' },
   sheetWrap: { width: '100%' },
   sheet: {
-    backgroundColor: colors.bg,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.xl,
     paddingBottom: spacing.xxl,
   },
@@ -140,15 +142,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.lg,
   },
-  close: { color: colors.primary, fontWeight: '700', fontSize: 15 },
+  close: { color: colors.primary, fontFamily: ff.bold, fontSize: 15 },
   field: { marginBottom: spacing.lg },
   label: { ...font.label, marginBottom: spacing.sm },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.bgSoft,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     height: 52,
     fontSize: 16,
+    fontFamily: ff.medium,
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
@@ -160,12 +163,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     height: 44,
     borderRadius: radius.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.bgSoft,
     borderWidth: 1,
     borderColor: colors.border,
   },
   optionActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  optionText: { color: colors.text, fontWeight: '600' },
-  optionTextActive: { color: '#fff' },
+  optionText: { color: colors.text, fontFamily: ff.semibold },
+  optionTextActive: { color: colors.textOnTeal },
   optionDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
 });

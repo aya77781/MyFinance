@@ -28,14 +28,14 @@ export default function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary || isDanger ? '#fff' : colors.primary} />
+        <ActivityIndicator color={isPrimary ? colors.textOnTeal : isDanger ? '#fff' : colors.primary} />
       ) : (
         <Text
           style={[
             styles.text,
-            isPrimary && styles.textPrimary,
+            isPrimary && styles.textOnTeal,
             isGhost && styles.textGhost,
-            isDanger && styles.textPrimary,
+            isDanger && styles.textWhite,
           ]}
         >
           {title}
@@ -59,6 +59,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.85 },
   text: { fontSize: 16, fontFamily: ff.bold },
-  textPrimary: { color: '#fff' },
+  textOnTeal: { color: colors.textOnTeal },
+  textWhite: { color: '#fff' },
   textGhost: { color: colors.primary },
 });
