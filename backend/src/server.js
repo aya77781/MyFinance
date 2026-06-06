@@ -1,0 +1,44 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import { connectDB } from './db.js';
+
+import authRoutes from './routes/auth.js';
+import categories from './routes/categories.js';
+import income from './routes/income.js';
+import charges from './routes/charges.js';
+import transactions from './routes/transactions.js';
+import savings from './routes/savings.js';
+import challenges from './routes/challenges.js';
+import dashboard from './routes/dashboard.js';
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(morgan('dev'));
+
+app.get('/', (req, res) => res.json({ name: 'Finance API', status: 'ok' }));
+
+app.use('/api/auth', authRoutes);
+app.use('/api/categories', categories);
+app.use('/api/income', income);
+app.use('/api/charges', charges);
+app.use('/api/transactions', transactions);
+app.use('/api/savings', savings);
+app.use('/api/challenges', challenges);
+app.use('/api/dashboard', dashboard);
+
+// Gestion centralisee des erreurs.
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({ error: err.message || 'Erreur serveur' });
+});
+
+const PORT = process.env.PORT || 4000;
+const URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/finance_app';
+
+connectDB(URI).then(() => {
+  app.listen(PORT, () => console.log(`API demarree sur http://localhost:${PORT}`));
+});

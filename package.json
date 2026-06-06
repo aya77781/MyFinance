@@ -1,0 +1,22 @@
+{
+  "name": "finance-app",
+  "version": "1.0.0",
+  "description": "App de finances personnelles (backend Express + MongoDB, mobile Expo)",
+  "private": true,
+  "scripts": {
+    "setup": "npm install && npm --prefix backend install && npm --prefix mobile install",
+    "reset": "npm --prefix backend run reset",
+    "backend": "npm --prefix backend run dev",
+    "mobile": "npm --prefix mobile start",
+    "web": "npm --prefix mobile run web",
+    "free-ports": "node scripts/free-ports.mjs",
+    "predev": "node scripts/free-ports.mjs",
+    "dev": "concurrently --names \"API,APP\" --prefix-colors \"magenta,cyan\" \"npm:backend\" \"npm:mobile\"",
+    "preweb-app": "node scripts/free-ports.mjs",
+    "web-app": "concurrently --names \"API,WEB\" --prefix-colors \"magenta,cyan\" \"npm:backend\" \"npm:web\"",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
