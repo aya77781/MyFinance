@@ -1,0 +1,11 @@
+node_modules/
+**/node_modules/
+.env
+**/.env
+dist/
+mobile/dist/
+.expo/
+**/.expo/
+*.log
+.web-check/
+.expo-export-check/

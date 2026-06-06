@@ -1,5 +1,5 @@
 import { Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, radius, spacing, ff } from '../theme';
 
 export default function Button({
   title,
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   danger: { backgroundColor: colors.negative },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.85 },
-  text: { fontSize: 16, fontWeight: '700' },
+  text: { fontSize: 16, fontFamily: ff.bold },
   textPrimary: { color: '#fff' },
   textGhost: { color: colors.primary },
 });

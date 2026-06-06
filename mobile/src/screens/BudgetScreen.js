@@ -4,8 +4,9 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import Screen from '../components/Screen';
 import Card from '../components/Card';
+import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
-import Pill from '../components/Pill';
+import CategoryIcon from '../components/CategoryIcon';
 import EmptyState from '../components/EmptyState';
 import { colors, spacing, font, radius, palette } from '../theme';
 import { euro } from '../format';
@@ -127,14 +128,14 @@ export default function BudgetScreen() {
         }}
       >
         {/* Resume mensuel previsionnel */}
-        <View style={styles.hero}>
+        <GradientCard>
           <Text style={styles.heroLabel}>Reste a vivre previsionnel</Text>
           <Text style={styles.heroValue}>{euro(dispo)}</Text>
           <View style={styles.heroRow}>
             <Text style={styles.heroPos}>+{euro(totalIncome)} revenus</Text>
             <Text style={styles.heroNeg}>-{euro(totalCharges)} charges</Text>
           </View>
-        </View>
+        </GradientCard>
 
         <SectionHeader title="Revenus stables" onAdd={() => setSheet('income')} />
         <Card padded={false} style={styles.listCard}>
@@ -238,7 +239,7 @@ function Row({ name, sub, amount, color, last, onLongPress }) {
         pressed && { opacity: 0.6 },
       ]}
     >
-      <Pill label={name} color={color} size={40} />
+      <CategoryIcon name={name} color={color} size={42} />
       <View style={{ flex: 1 }}>
         <Text style={font.title} numberOfLines={1}>
           {name}
@@ -251,17 +252,11 @@ function Row({ name, sub, amount, color, last, onLongPress }) {
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    backgroundColor: colors.hero,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    marginBottom: spacing.sm,
-  },
-  heroLabel: { color: colors.textOnHeroMuted, fontSize: 14, fontWeight: '600' },
-  heroValue: { color: '#fff', fontSize: 34, fontWeight: '800', marginTop: 4 },
+  heroLabel: { color: colors.textOnBrandMuted, fontSize: 14, fontWeight: '600' },
+  heroValue: { color: '#fff', fontFamily: 'Manrope_800ExtraBold', fontSize: 38, marginTop: 4, letterSpacing: -1 },
   heroRow: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.md },
-  heroPos: { color: colors.positive, fontWeight: '700', fontSize: 13 },
-  heroNeg: { color: '#FF8CA0', fontWeight: '700', fontSize: 13 },
+  heroPos: { color: '#9FE7C4', fontWeight: '700', fontSize: 13 },
+  heroNeg: { color: '#FFB3BE', fontWeight: '700', fontSize: 13 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',

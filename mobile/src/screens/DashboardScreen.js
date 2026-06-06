@@ -1,20 +1,23 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScrollView, RefreshControl } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, spacing, radius, font, shadow } from '../theme';
+import { colors, spacing, radius, font, ff, brandGradient } from '../theme';
 import { euro, monthLabel } from '../format';
 import { Dashboard } from '../api';
+import { useAuth } from '../AuthContext';
 import Card from '../components/Card';
+import ActionTile from '../components/ActionTile';
 import DonutChart from '../components/DonutChart';
-import BarChart from '../components/BarChart';
+import CategoryIcon from '../components/CategoryIcon';
 import TransactionRow from '../components/TransactionRow';
 import EmptyState from '../components/EmptyState';
 
 export default function DashboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,8 +26,7 @@ export default function DashboardScreen({ navigation }) {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const d = await Dashboard.get();
-      setData(d);
+      setData(await Dashboard.get());
     } catch (e) {
       setError(e.message);
     } finally {
@@ -50,12 +52,8 @@ export default function DashboardScreen({ navigation }) {
   if (error) {
     return (
       <View style={[styles.center, { padding: spacing.xl }]}>
-        <Text style={[font.title, { textAlign: 'center', marginBottom: 6 }]}>
-          Connexion au serveur impossible
-        </Text>
-        <Text style={[font.caption, { textAlign: 'center' }]}>
-          Verifie que le backend tourne et que l'app est sur le meme reseau wifi. ({error})
-        </Text>
+        <Text style={[font.title, { textAlign: 'center', marginBottom: 6 }]}>Serveur injoignable</Text>
+        <Text style={[font.caption, { textAlign: 'center' }]}>Verifie que le backend tourne. ({error})</Text>
       </View>
     );
   }
@@ -64,11 +62,12 @@ export default function DashboardScreen({ navigation }) {
   const { year, month } = data.period;
   const donutData = data.expensesByCategory.map((c) => ({ value: c.total, color: c.color }));
   const totalExpenses = data.expensesByCategory.reduce((a, c) => a + c.total, 0);
+  const initials = ((user?.name || user?.email || '?').trim()[0] || '?').toUpperCase();
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ paddingTop: insets.top + spacing.md, paddingBottom: 120 }}
+      contentContainerStyle={{ paddingBottom: 120 }}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
@@ -77,81 +76,84 @@ export default function DashboardScreen({ navigation }) {
             setRefreshing(true);
             load();
           }}
-          tintColor={colors.primary}
+          tintColor="#fff"
         />
       }
     >
-      <View style={{ paddingHorizontal: spacing.xl }}>
-        <Text style={styles.period}>{monthLabel(year, month)}</Text>
-
-        {/* Carte hero : solde net du mois */}
-        <View style={styles.hero}>
-          <Text style={styles.heroLabel}>Solde du mois</Text>
-          <Text style={styles.heroValue}>{euro(s.net, { sign: true })}</Text>
-
-          <View style={styles.heroRow}>
-            <View>
-              <Text style={styles.heroSmallLabel}>Entrees</Text>
-              <Text style={styles.heroPositive}>{euro(s.realIncome)}</Text>
-            </View>
-            <View>
-              <Text style={styles.heroSmallLabel}>Sorties</Text>
-              <Text style={styles.heroNegative}>{euro(s.totalOut)}</Text>
-            </View>
-            <View style={styles.rateBadge}>
-              <Text style={styles.rateText}>{s.savingsRate}%</Text>
-              <Text style={styles.rateSub}>epargne</Text>
-            </View>
+      {/* En-tete degrade plein largeur */}
+      <LinearGradient
+        colors={brandGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
+      >
+        <View style={styles.topbar}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
           </View>
+          <Pressable onPress={() => navigation.navigate('Budget')} style={styles.topBtn} hitSlop={8}>
+            <View style={styles.topBtnDot} />
+            <View style={styles.topBtnDot} />
+            <View style={styles.topBtnDot} />
+          </Pressable>
         </View>
 
-        {/* Trois stats cles */}
-        <View style={styles.statsRow}>
-          <Stat label="Revenus stables" value={euro(s.stableIncome)} tone={colors.positive} />
-          <Stat label="Charges fixes" value={euro(s.fixedCharges)} tone={colors.negative} />
-          <Stat label="Epargne totale" value={euro(s.totalSaved)} tone={colors.primary} />
+        <Text style={styles.balanceLabel}>Solde du mois · {monthLabel(year, month)}</Text>
+        <Balance value={s.net} />
+
+        <View style={styles.actions}>
+          <ActionTile glyph="plus" label="Ajouter" onBrand onPress={() => navigation.navigate('Transactions')} />
+          <ActionTile glyph="savings" label="Epargne" onBrand onPress={() => navigation.navigate('Epargne')} />
+          <ActionTile glyph="target" label="Challenges" onBrand onPress={() => navigation.navigate('Challenges')} />
+          <ActionTile glyph="wallet" label="Budget" onBrand onPress={() => navigation.navigate('Budget')} />
+        </View>
+      </LinearGradient>
+
+      <View style={styles.body}>
+        {/* Entrees / sorties */}
+        <View style={styles.flowRow}>
+          <Flow label="Entrees" value={euro(s.realIncome)} tone={colors.positive} />
+          <View style={styles.flowDivider} />
+          <Flow label="Sorties" value={euro(s.totalOut)} tone={colors.negative} />
         </View>
 
-        {/* Donut depenses par categorie */}
-        <Card style={{ marginTop: spacing.lg }}>
-          <Text style={font.title}>Depenses par categorie</Text>
+        {/* Analyses */}
+        <Text style={styles.section}>Analyses</Text>
+        <Card>
           {donutData.length === 0 ? (
             <EmptyState title="Aucune depense ce mois" text="Ajoute des transactions pour voir la repartition." />
           ) : (
-            <View style={styles.donutWrap}>
-              <DonutChart data={donutData}>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={font.caption}>Total</Text>
-                  <Text style={styles.donutTotal}>{euro(totalExpenses)}</Text>
-                </View>
-              </DonutChart>
-              <View style={styles.legend}>
-                {data.expensesByCategory.slice(0, 6).map((c) => (
-                  <View key={String(c.categoryId)} style={styles.legendRow}>
-                    <View style={[styles.legendDot, { backgroundColor: c.color }]} />
-                    <Text style={styles.legendName} numberOfLines={1}>
-                      {c.name}
-                    </Text>
-                    <Text style={styles.legendVal}>{euro(c.total)}</Text>
+            <>
+              <View style={styles.donutWrap}>
+                <DonutChart data={donutData} size={148} strokeWidth={18}>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={font.caption}>Depenses</Text>
+                    <Text style={styles.donutTotal}>{euro(totalExpenses)}</Text>
                   </View>
-                ))}
+                </DonutChart>
+                <View style={styles.legend}>
+                  {data.expensesByCategory.slice(0, 5).map((c) => {
+                    const pct = totalExpenses > 0 ? Math.round((c.total / totalExpenses) * 100) : 0;
+                    return (
+                      <View key={String(c.categoryId)} style={styles.legendRow}>
+                        <View style={[styles.legendDot, { backgroundColor: c.color }]} />
+                        <Text style={styles.legendName} numberOfLines={1}>{c.name}</Text>
+                        <Text style={styles.legendPct}>{pct}%</Text>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
+            </>
           )}
         </Card>
 
-        {/* Tendance 6 mois */}
-        <Card style={{ marginTop: spacing.lg }}>
-          <Text style={[font.title, { marginBottom: spacing.lg }]}>Tendance (6 mois)</Text>
-          <BarChart data={data.monthlyTrend} />
-        </Card>
-
-        {/* Transactions recentes */}
-        <View style={styles.sectionHeader}>
-          <Text style={font.h2}>Recent</Text>
-          <Text style={styles.link} onPress={() => navigation.navigate('Transactions')}>
-            Tout voir
-          </Text>
+        {/* Recent */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.section}>Recent</Text>
+          <Pressable onPress={() => navigation.navigate('Transactions')} hitSlop={8}>
+            <Text style={styles.link}>Tout voir</Text>
+          </Pressable>
         </View>
         <Card padded={false} style={{ paddingHorizontal: spacing.lg }}>
           {data.recentTransactions.length === 0 ? (
@@ -160,11 +162,7 @@ export default function DashboardScreen({ navigation }) {
             data.recentTransactions.map((tx, i) => (
               <View
                 key={tx._id}
-                style={
-                  i < data.recentTransactions.length - 1
-                    ? { borderBottomWidth: 1, borderBottomColor: colors.border }
-                    : null
-                }
+                style={i < data.recentTransactions.length - 1 ? styles.sep : null}
               >
                 <TransactionRow tx={tx} />
               </View>
@@ -176,71 +174,92 @@ export default function DashboardScreen({ navigation }) {
   );
 }
 
-function Stat({ label, value, tone }) {
+// Solde : partie entiere grande, centimes plus petits (facon Revolut).
+function Balance({ value }) {
+  const formatted = euro(value, { sign: true }); // ex : "+1 234,56 €"
+  const [intPart, decPart] = formatted.split(',');
   return (
-    <View style={[styles.stat, shadow]}>
-      <View style={[styles.statBar, { backgroundColor: tone }]} />
-      <Text style={styles.statLabel} numberOfLines={1}>
-        {label}
-      </Text>
-      <Text style={styles.statValue} numberOfLines={1}>
-        {value}
-      </Text>
+    <View style={styles.balance}>
+      <Text style={styles.balanceInt}>{intPart}</Text>
+      {decPart ? <Text style={styles.balanceDec}>,{decPart}</Text> : null}
+    </View>
+  );
+}
+
+function Flow({ label, value, tone }) {
+  return (
+    <View style={styles.flow}>
+      <View style={[styles.flowDot, { backgroundColor: tone }]} />
+      <View>
+        <Text style={font.caption}>{label}</Text>
+        <Text style={styles.flowValue}>{value}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
-  period: { ...font.label, textTransform: 'capitalize', marginBottom: spacing.sm },
-  hero: {
-    backgroundColor: colors.hero,
+  header: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { color: '#fff', fontFamily: ff.bold, fontSize: 16 },
+  topBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  topBtnDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#fff' },
+  balanceLabel: {
+    color: colors.textOnBrandMuted,
+    fontFamily: ff.semibold,
+    fontSize: 13,
+    textAlign: 'center',
+    textTransform: 'capitalize',
+    marginTop: spacing.xl,
+  },
+  balance: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', marginTop: 6 },
+  balanceInt: { ...font.hero },
+  balanceDec: { color: '#fff', fontFamily: ff.bold, fontSize: 24, marginTop: 6, opacity: 0.85 },
+  actions: { flexDirection: 'row', marginTop: spacing.xl, gap: spacing.sm },
+  body: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+  flowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgSoft,
     borderRadius: radius.lg,
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
-  heroLabel: { color: colors.textOnHeroMuted, fontSize: 14, fontWeight: '600' },
-  heroValue: { color: colors.textOnHero, fontSize: 38, fontWeight: '800', marginTop: 4 },
-  heroRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  heroSmallLabel: { color: colors.textOnHeroMuted, fontSize: 12, fontWeight: '600' },
-  heroPositive: { color: colors.positive, fontSize: 16, fontWeight: '700', marginTop: 2 },
-  heroNegative: { color: '#FF8CA0', fontSize: 16, fontWeight: '700', marginTop: 2 },
-  rateBadge: {
-    backgroundColor: colors.heroSoft,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
-  },
-  rateText: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  rateSub: { color: colors.textOnHeroMuted, fontSize: 10, fontWeight: '600' },
-  statsRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  stat: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-  },
-  statBar: { width: 24, height: 4, borderRadius: 2, marginBottom: spacing.sm },
-  statLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '600' },
-  statValue: { fontSize: 16, fontWeight: '800', color: colors.text, marginTop: 2 },
-  donutWrap: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.lg, gap: spacing.lg },
-  donutTotal: { fontSize: 18, fontWeight: '800', color: colors.text },
-  legend: { flex: 1, gap: spacing.sm },
+  flow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  flowDot: { width: 10, height: 10, borderRadius: 5 },
+  flowValue: { fontFamily: ff.extrabold, fontSize: 17, color: colors.text, marginTop: 1 },
+  flowDivider: { width: 1, height: 32, backgroundColor: colors.border },
+  section: { ...font.h2, marginTop: spacing.xl, marginBottom: spacing.md },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  donutWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
+  donutTotal: { fontFamily: ff.extrabold, fontSize: 17, color: colors.text },
+  legend: { flex: 1, gap: 10 },
   legendRow: { flexDirection: 'row', alignItems: 'center' },
-  legendDot: { width: 10, height: 10, borderRadius: 5, marginRight: spacing.sm },
-  legendName: { flex: 1, fontSize: 13, color: colors.text, fontWeight: '600' },
-  legendVal: { fontSize: 13, color: colors.textMuted, fontWeight: '700' },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
-  },
-  link: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+  legendDot: { width: 9, height: 9, borderRadius: 5, marginRight: spacing.sm },
+  legendName: { flex: 1, fontFamily: ff.semibold, fontSize: 13.5, color: colors.text },
+  legendPct: { fontFamily: ff.bold, fontSize: 13.5, color: colors.textMuted },
+  sep: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  link: { color: colors.primary, fontFamily: ff.bold, fontSize: 14, marginTop: spacing.xl, marginBottom: spacing.md },
 });

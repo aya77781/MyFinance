@@ -3,15 +3,17 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
+    "@expo-google-fonts/manrope": "^0.4.2",
     "@expo/metro-runtime": "~56.0.14",
     "@react-navigation/bottom-tabs": "^7.16.2",
     "@react-navigation/native": "^7.2.5",
     "@react-navigation/native-stack": "^7.16.0",
     "expo": "~56.0.9",
     "expo-constants": "~56.0.17",
+    "expo-font": "~56.0.5",
+    "expo-linear-gradient": "~56.0.4",
     "expo-secure-store": "~56.0.4",
     "expo-status-bar": "~56.0.4",
-    "finance-app": "file:..",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
@@ -25,7 +27,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "vercel-build": "expo export -p web"
   },
   "private": true
 }

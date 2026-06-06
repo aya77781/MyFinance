@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Card from './Card';
 import ProgressBar from './ProgressBar';
-import { colors, spacing, font, radius } from '../theme';
+import { colors, spacing, font, radius, ff } from '../theme';
 import { euro } from '../format';
 
 // Carte d'objectif (epargne ou challenge) avec progression.
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
   addText: { color: colors.primary, fontWeight: '700', fontSize: 13 },
   amounts: { flexDirection: 'row', alignItems: 'baseline', marginBottom: spacing.md },
-  current: { fontSize: 24, fontWeight: '800', color: colors.text },
+  current: { fontSize: 26, fontFamily: ff.extrabold, color: colors.text, letterSpacing: -0.5 },
   target: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
   pct: { ...font.caption, marginTop: spacing.sm, fontWeight: '700' },
 });

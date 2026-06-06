@@ -6,12 +6,12 @@ import Screen from '../components/Screen';
 import Card from '../components/Card';
 import AddButton from '../components/AddButton';
 import GoalCard from '../components/GoalCard';
+import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
-import { colors, spacing, font, radius } from '../theme';
+import { colors, spacing, font, radius, palette } from '../theme';
 import { euro } from '../format';
 import { Savings } from '../api';
-import { palette } from '../theme';
 
 export default function SavingsScreen() {
   const [items, setItems] = useState([]);
@@ -80,12 +80,11 @@ export default function SavingsScreen() {
           load();
         }}
       >
-        <View style={{ marginBottom: spacing.lg }}>
-          <View style={styles.totalCard}>
-            <Text style={styles.totalLabel}>Total epargne</Text>
-            <Text style={styles.totalValue}>{euro(total)}</Text>
-          </View>
-        </View>
+        <GradientCard style={{ marginBottom: spacing.lg }}>
+          <Text style={styles.totalLabel}>Total epargne</Text>
+          <Text style={styles.totalValue}>{euro(total)}</Text>
+          <Text style={styles.totalSub}>{items.length} pochette(s)</Text>
+        </GradientCard>
 
         {items.length === 0 ? (
           <Card>
@@ -140,11 +139,7 @@ export default function SavingsScreen() {
 }
 
 const styles = {
-  totalCard: {
-    backgroundColor: colors.hero,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-  },
-  totalLabel: { color: colors.textOnHeroMuted, fontSize: 14, fontWeight: '600' },
-  totalValue: { color: '#fff', fontSize: 34, fontWeight: '800', marginTop: 4 },
+  totalLabel: { color: colors.textOnBrandMuted, fontSize: 14, fontWeight: '600' },
+  totalValue: { color: '#fff', fontFamily: 'Manrope_800ExtraBold', fontSize: 38, marginTop: 4, letterSpacing: -1 },
+  totalSub: { color: colors.textOnBrandMuted, fontSize: 13, fontWeight: '600', marginTop: 4 },
 };

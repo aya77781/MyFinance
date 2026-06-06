@@ -1,13 +1,14 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import SavingsScreen from '../screens/SavingsScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
-import TabIcon from '../components/TabIcon';
-import { colors } from '../theme';
+import MarketScreen from '../screens/MarketScreen';
+import Glyph from '../components/Glyph';
+import { colors, ff } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,29 +17,57 @@ const ICONS = {
   Transactions: 'list',
   Budget: 'wallet',
   Epargne: 'savings',
-  Challenges: 'challenge',
+  Challenges: 'target',
+  Marche: 'news',
+};
+
+// Labels courts pour que les 6 onglets tiennent dans la barre.
+const LABELS = {
+  Accueil: 'Accueil',
+  Transactions: 'Activite',
+  Budget: 'Budget',
+  Epargne: 'Epargne',
+  Challenges: 'Defis',
+  Marche: 'Marche',
 };
 
 export default function Tabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: '#fff',
+        tabBarInactiveTintColor: '#7C7C8A',
+        tabBarShowLabel: true,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          height: Platform.OS === 'ios' ? 86 : 64,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: Math.max(insets.bottom, 12),
+          height: 64,
+          borderRadius: 32,
+          backgroundColor: '#0E0E12',
+          borderTopWidth: 0,
+          paddingHorizontal: 8,
+          paddingTop: 9,
+          paddingBottom: 9,
+          shadowColor: '#000',
+          shadowOpacity: 0.25,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 10,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        tabBarIcon: ({ color }) => <TabIcon name={ICONS[route.name]} color={color} />,
+        tabBarItemStyle: { borderRadius: 20, marginHorizontal: 2 },
+        tabBarActiveBackgroundColor: 'rgba(255,255,255,0.12)',
+        tabBarLabel: LABELS[route.name],
+        tabBarLabelStyle: { fontFamily: ff.semibold, fontSize: 9.5, marginTop: -2 },
+        tabBarIcon: ({ color }) => <Glyph name={ICONS[route.name]} color={color} size={21} />,
       })}
     >
       <Tab.Screen name="Accueil" component={DashboardScreen} />
       <Tab.Screen name="Transactions" component={TransactionsScreen} />
+      <Tab.Screen name="Marche" component={MarketScreen} />
       <Tab.Screen name="Budget" component={BudgetScreen} />
       <Tab.Screen name="Epargne" component={SavingsScreen} />
       <Tab.Screen name="Challenges" component={ChallengesScreen} />

@@ -10,8 +10,9 @@ import {
   Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, spacing, radius, font } from '../theme';
+import { colors, spacing, radius, font, ff, brandGradient } from '../theme';
 import Button from '../components/Button';
 import { useAuth } from '../AuthContext';
 
@@ -45,8 +46,9 @@ export default function AuthScreen() {
   };
 
   return (
+    <LinearGradient colors={brandGradient} style={{ flex: 1 }}>
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.hero }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
@@ -112,6 +114,7 @@ export default function AuthScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
@@ -131,14 +134,14 @@ function Field({ label, ...props }) {
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
   brandMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     marginBottom: spacing.md,
   },
-  brand: { color: '#fff', fontSize: 30, fontWeight: '800' },
-  tagline: { color: colors.textOnHeroMuted, fontSize: 15, marginTop: 6, marginBottom: spacing.xl, lineHeight: 21 },
+  brand: { color: '#fff', fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
+  tagline: { color: colors.textOnBrandMuted, fontSize: 15, marginTop: 6, marginBottom: spacing.xl, lineHeight: 21 },
   card: {
     backgroundColor: colors.bg,
     borderRadius: radius.lg,

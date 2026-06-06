@@ -1,8 +1,12 @@
 import Constants from 'expo-constants';
 
-// Detecte automatiquement l'IP de la machine de dev pour qu'un telephone
-// physique (Expo Go) puisse joindre le backend sur le meme reseau wifi.
-// Sur emulateur / web, localhost suffit.
+// En PRODUCTION (web/Vercel), definis EXPO_PUBLIC_API_URL avec l'URL complete
+// du backend deploye, ex : https://mon-backend.onrender.com/api
+// Expo inline cette variable au build.
+const ENV_URL = process.env.EXPO_PUBLIC_API_URL;
+
+// En DEV, on detecte l'IP de la machine pour qu'un telephone (Expo Go) joigne
+// le backend local sur le meme wifi.
 function detectHost() {
   const hostUri =
     Constants.expoConfig?.hostUri ||
@@ -13,7 +17,6 @@ function detectHost() {
   return host || 'localhost';
 }
 
-// Port du backend Express.
 const API_PORT = 4000;
 
-export const API_URL = `http://${detectHost()}:${API_PORT}/api`;
+export const API_URL = ENV_URL || `http://${detectHost()}:${API_PORT}/api`;

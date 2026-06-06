@@ -93,6 +93,12 @@ export const Savings = {
   remove: (id) => api.del(`/savings/${id}`),
 };
 
+export const Market = {
+  regions: () => api.get('/market/regions'),
+  news: (region) => api.get(`/market/news?region=${region}`),
+  opportunities: (region) => api.get(`/market/opportunities?region=${region}`),
+};
+
 export const Challenges = {
   list: () => api.get('/challenges'),
   create: (data) => api.post('/challenges', data),

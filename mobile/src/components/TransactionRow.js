@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, spacing, font } from '../theme';
+import { colors, spacing, font, ff } from '../theme';
 import { euro, shortDate } from '../format';
-import Pill from './Pill';
+import CategoryIcon from './CategoryIcon';
 
 export default function TransactionRow({ tx, onPress, onLongPress }) {
   const isIncome = tx.type === 'income';
@@ -13,7 +13,12 @@ export default function TransactionRow({ tx, onPress, onLongPress }) {
       onLongPress={onLongPress}
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}
     >
-      <Pill label={name} color={color} />
+      <CategoryIcon
+        name={name}
+        color={color}
+        glyph={isIncome ? 'arrowDown' : undefined}
+        size={46}
+      />
       <View style={{ flex: 1 }}>
         <Text style={font.title} numberOfLines={1}>
           {tx.note || name}
@@ -32,5 +37,5 @@ export default function TransactionRow({ tx, onPress, onLongPress }) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md },
-  amount: { fontSize: 16, fontWeight: '700' },
+  amount: { fontSize: 16, fontFamily: ff.bold },
 });

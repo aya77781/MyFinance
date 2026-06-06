@@ -12,6 +12,7 @@ import transactions from './routes/transactions.js';
 import savings from './routes/savings.js';
 import challenges from './routes/challenges.js';
 import dashboard from './routes/dashboard.js';
+import market from './routes/market.js';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/api/transactions', transactions);
 app.use('/api/savings', savings);
 app.use('/api/challenges', challenges);
 app.use('/api/dashboard', dashboard);
+app.use('/api/market', market);
 
 // Gestion centralisee des erreurs.
 app.use((err, req, res, next) => {

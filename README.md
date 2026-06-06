@@ -92,6 +92,13 @@ Si besoin, force l'adresse en editant `mobile/src/config.js` (`API_PORT` ou le h
   avec reste a vivre previsionnel.
 - **Epargne** : pochettes d'objectifs avec progression, ajout / retrait.
 - **Challenges** : defis financiers (no-spend, 52 semaines...) avec suivi de progres.
+- **Marche** : actualites finance en temps reel (API GNews) + opportunites d'epargne
+  et d'investissement selon la region (France, Maroc, Europe, USA, Monde).
+
+## Mise en ligne
+
+Voir [DEPLOY.md](DEPLOY.md) : front sur Vercel, backend sur Render, base sur
+MongoDB Atlas. L'URL de l'API se configure via `EXPO_PUBLIC_API_URL`.
 
 ## 5. API (resume)
 
