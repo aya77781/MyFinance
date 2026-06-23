@@ -18,7 +18,10 @@ async function request(path, options = {}) {
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
 
-  if (res.status === 401) {
+  // 401 sur une requete AUTHENTIFIEE (token envoye) = session reellement expiree.
+  // 401 sans token (login / register) = mauvais identifiants : on laisse le
+  // message du serveur remonter (voir bloc !res.ok ci-dessous).
+  if (res.status === 401 && authToken) {
     if (onUnauthorized) onUnauthorized();
     throw new Error('Session expiree, reconnecte-toi');
   }
