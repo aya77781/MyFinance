@@ -1,9 +1,7 @@
 import { Collection } from '../store.js';
 
 // Utilisateur. On ne renvoie jamais passwordHash au client (voir publicUser).
-export default new Collection('users', {
-  defaults: { name: '' },
-});
+export default new Collection('users');
 
 export function publicUser(u) {
   if (!u) return null;

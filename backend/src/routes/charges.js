@@ -8,8 +8,9 @@ router.use(auth);
 
 router.get('/', async (req, res, next) => {
   try {
-    const items = FixedCharge.find({ user: req.userId }).sort((a, b) => a.dayOfMonth - b.dayOfMonth);
-    res.json(withCategories(items));
+    const items = await FixedCharge.find({ user: req.userId });
+    items.sort((a, b) => a.dayOfMonth - b.dayOfMonth);
+    res.json(await withCategories(items));
   } catch (e) {
     next(e);
   }
@@ -17,8 +18,8 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const item = FixedCharge.insert({ ...req.body, user: req.userId });
-    res.status(201).json(withCategory(item));
+    const item = await FixedCharge.insert({ ...req.body, user: req.userId });
+    res.status(201).json(await withCategory(item));
   } catch (e) {
     next(e);
   }
@@ -27,9 +28,9 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { user, ...data } = req.body;
-    const item = FixedCharge.update({ _id: req.params.id, user: req.userId }, data);
+    const item = await FixedCharge.update({ _id: req.params.id, user: req.userId }, data);
     if (!item) return res.status(404).json({ error: 'Charge introuvable' });
-    res.json(withCategory(item));
+    res.json(await withCategory(item));
   } catch (e) {
     next(e);
   }
@@ -37,7 +38,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    FixedCharge.remove({ _id: req.params.id, user: req.userId });
+    await FixedCharge.remove({ _id: req.params.id, user: req.userId });
     res.status(204).end();
   } catch (e) {
     next(e);

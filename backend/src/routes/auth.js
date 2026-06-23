@@ -18,13 +18,13 @@ router.post('/register', async (req, res, next) => {
       return res.status(400).json({ error: 'Mot de passe : 6 caracteres minimum' });
     }
     const normalizedEmail = String(email).toLowerCase().trim();
-    const existing = User.findOne({ email: normalizedEmail });
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(409).json({ error: 'Un compte existe deja avec cet email' });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = User.insert({ name: name || '', email: normalizedEmail, passwordHash });
+    const user = await User.insert({ name: name || '', email: normalizedEmail, passwordHash });
 
-    Category.insertMany(DEFAULT_CATEGORIES.map((c) => ({ ...c, user: user._id })));
+    await Category.insertMany(DEFAULT_CATEGORIES.map((c) => ({ ...c, user: user._id })));
 
     const token = signToken(user._id);
     res.status(201).json({ token, user: publicUser(user) });
@@ -37,7 +37,7 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const user = User.findOne({ email: String(email || '').toLowerCase().trim() });
+    const user = await User.findOne({ email: String(email || '').toLowerCase().trim() });
     if (!user) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     const ok = await bcrypt.compare(password || '', user.passwordHash);
     if (!ok) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
@@ -51,7 +51,7 @@ router.post('/login', async (req, res, next) => {
 // Profil de l'utilisateur connecte.
 router.get('/me', auth, async (req, res, next) => {
   try {
-    const user = User.findById(req.userId);
+    const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
     res.json({ user: publicUser(user) });
   } catch (e) {

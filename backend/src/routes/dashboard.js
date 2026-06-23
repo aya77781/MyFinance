@@ -5,7 +5,6 @@ import Transaction from '../models/Transaction.js';
 import Saving from '../models/Saving.js';
 import Challenge from '../models/Challenge.js';
 import Category from '../models/Category.js';
-import { withCategories } from '../populate.js';
 import { auth } from '../middleware/auth.js';
 
 const router = Router();
@@ -26,15 +25,18 @@ router.get('/', async (req, res, next) => {
     const { start, end } = monthRange(year, month);
     const uid = req.userId;
 
-    const incomes = Income.find({ user: uid, active: true });
-    const charges = FixedCharge.find({ user: uid, active: true });
-    const savings = Saving.find({ user: uid }).sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-    const challenges = Challenge.find({ user: uid }).sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-    const allTx = Transaction.find({ user: uid });
+    const [incomes, charges, savings, challenges, allTx, categories] = await Promise.all([
+      Income.find({ user: uid, active: true }),
+      FixedCharge.find({ user: uid, active: true }),
+      Saving.find({ user: uid }),
+      Challenge.find({ user: uid }),
+      Transaction.find({ user: uid }),
+      Category.find({ user: uid }),
+    ]);
+    savings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    challenges.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Index des categories pour eviter une requete par transaction.
+    const catById = new Map(categories.map((c) => [c._id, c]));
 
     const totalStableIncome = incomes.reduce((s, i) => s + Number(i.amount || 0), 0);
     const totalFixedCharges = charges.reduce((s, c) => s + Number(c.amount || 0), 0);
@@ -60,7 +62,7 @@ router.get('/', async (req, res, next) => {
     }
     const expensesByCategory = [...catMap.entries()]
       .map(([categoryId, total]) => {
-        const cat = categoryId === 'none' ? null : Category.findById(categoryId);
+        const cat = categoryId === 'none' ? null : catById.get(categoryId);
         return {
           categoryId: categoryId === 'none' ? null : categoryId,
           name: cat?.name || 'Non classe',
@@ -92,7 +94,8 @@ router.get('/', async (req, res, next) => {
 
     const recent = [...allTx]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 8);
+      .slice(0, 8)
+      .map((t) => ({ ...t, category: t.category ? catById.get(t.category) || null : null }));
 
     const totalSaved = savings.reduce((s, v) => s + Number(v.currentAmount || 0), 0);
     const realIncome = totalStableIncome + monthExtraIncome;
@@ -116,7 +119,7 @@ router.get('/', async (req, res, next) => {
       monthlyTrend,
       savings,
       challenges,
-      recentTransactions: withCategories(recent),
+      recentTransactions: recent,
     });
   } catch (e) {
     next(e);

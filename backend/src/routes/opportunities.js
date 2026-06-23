@@ -20,9 +20,8 @@ function clean(body = {}) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const items = Opportunity.find({ user: req.userId }).sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
+    const items = await Opportunity.find({ user: req.userId });
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(items);
   } catch (e) {
     next(e);
@@ -34,7 +33,7 @@ router.post('/', async (req, res, next) => {
     const data = clean(req.body);
     if (!data.title) return res.status(400).json({ error: 'Titre requis' });
     const status = data.status || 'open';
-    const item = Opportunity.insert({
+    const item = await Opportunity.insert({
       ...data,
       user: req.userId,
       status,
@@ -49,7 +48,7 @@ router.post('/', async (req, res, next) => {
 
 router.put('/:id', async (req, res, next) => {
   try {
-    const item = Opportunity.findOne({ _id: req.params.id, user: req.userId });
+    const item = await Opportunity.findOne({ _id: req.params.id, user: req.userId });
     if (!item) return res.status(404).json({ error: 'Opportunite introuvable' });
 
     const data = clean(req.body);
@@ -61,7 +60,7 @@ router.put('/:id', async (req, res, next) => {
     // Si on repasse "en cours", on remet le resultat a zero.
     if (nextStatus === 'open') data.result = 0;
 
-    const saved = Opportunity.update({ _id: req.params.id, user: req.userId }, data);
+    const saved = await Opportunity.update({ _id: req.params.id, user: req.userId }, data);
     res.json(saved);
   } catch (e) {
     next(e);
@@ -70,7 +69,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    Opportunity.remove({ _id: req.params.id, user: req.userId });
+    await Opportunity.remove({ _id: req.params.id, user: req.userId });
     res.status(204).end();
   } catch (e) {
     next(e);
