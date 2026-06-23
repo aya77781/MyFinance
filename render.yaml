@@ -8,9 +8,16 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: npm start
+    # Stockage en fichiers JSON. Pour conserver les donnees entre redeploiements,
+    # ajoute un disque persistant ci-dessous et regle DATA_DIR sur son point de
+    # montage (le disque persistant n'est pas dispo sur le plan "free").
+    # disk:
+    #   name: finance-data
+    #   mountPath: /data
+    #   sizeGB: 1
     envVars:
-      - key: MONGODB_URI
-        sync: false # a remplir : URI MongoDB Atlas
+      # - key: DATA_DIR
+      #   value: /data # a activer si tu ajoutes le disque persistant ci-dessus
       - key: JWT_SECRET
         generateValue: true # genere automatiquement
       - key: GNEWS_API_TOKEN

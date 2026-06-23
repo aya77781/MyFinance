@@ -1,16 +1,6 @@
-import mongoose from 'mongoose';
+import { Collection } from '../store.js';
 
 // Revenu stable / recurrent (salaire, loyer percu, etc.).
-const incomeSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    name: { type: String, required: true, trim: true },
-    amount: { type: Number, required: true, min: 0 },
-    dayOfMonth: { type: Number, min: 1, max: 31, default: 1 },
-    active: { type: Boolean, default: true },
-    note: { type: String, trim: true, default: '' },
-  },
-  { timestamps: true }
-);
-
-export default mongoose.model('Income', incomeSchema);
+export default new Collection('incomes', {
+  defaults: { dayOfMonth: 1, active: true, note: '' },
+});

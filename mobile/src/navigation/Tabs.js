@@ -6,6 +6,7 @@ import TransactionsScreen from '../screens/TransactionsScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import SavingsScreen from '../screens/SavingsScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
+import OpportunitiesScreen from '../screens/OpportunitiesScreen';
 import MarketScreen from '../screens/MarketScreen';
 import Glyph from '../components/Glyph';
 import { colors, ff } from '../theme';
@@ -18,16 +19,18 @@ const ICONS = {
   Budget: 'wallet',
   Epargne: 'savings',
   Challenges: 'target',
+  Opportunites: 'trending',
   Marche: 'news',
 };
 
-// Labels courts pour que les 6 onglets tiennent dans la barre.
+// Labels courts pour que les onglets tiennent dans la barre.
 const LABELS = {
   Accueil: 'Accueil',
   Transactions: 'Activite',
   Budget: 'Budget',
   Epargne: 'Epargne',
   Challenges: 'Defis',
+  Opportunites: 'Opport.',
   Marche: 'Marche',
 };
 
@@ -73,6 +76,7 @@ export default function Tabs() {
       <Tab.Screen name="Budget" component={BudgetScreen} />
       <Tab.Screen name="Epargne" component={SavingsScreen} />
       <Tab.Screen name="Challenges" component={ChallengesScreen} />
+      <Tab.Screen name="Opportunites" component={OpportunitiesScreen} />
     </Tab.Navigator>
   );
 }

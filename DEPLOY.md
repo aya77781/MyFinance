@@ -1,10 +1,12 @@
 # Mettre l'app en ligne
 
-L'app a 3 morceaux a heberger :
+L'app a 2 morceaux a heberger :
 
-1. **Base de donnees** -> MongoDB Atlas (cloud, gratuit)
-2. **Backend** (Express) -> Render (gratuit)
-3. **Front** (app web Expo) -> Vercel
+1. **Backend** (Express + stockage fichiers JSON) -> Render
+2. **Front** (app web Expo) -> Vercel
+
+Il n'y a **aucune base de donnees externe** : le backend stocke tout dans des
+fichiers JSON (`backend/data/`).
 
 > Pourquoi le 404 sur Vercel au depart ? Parce que Vercel pointait sur la racine
 > du depot (un monorepo backend + mobile) sans rien a servir. Il faut lui dire de
@@ -14,26 +16,12 @@ Fais les etapes dans l'ordre.
 
 ---
 
-## 1. MongoDB Atlas (base de donnees)
-
-1. Cree un compte sur https://www.mongodb.com/atlas et un cluster gratuit (M0).
-2. Dans **Database Access** : cree un utilisateur (login + mot de passe).
-3. Dans **Network Access** : ajoute `0.0.0.0/0` (autorise tout, pour que Render se connecte).
-4. **Connect > Drivers** : copie l'URI, du type
-   `mongodb+srv://USER:PASSWORD@cluster0.xxxx.mongodb.net/finance_app`
-   (ajoute `/finance_app` avant le `?` pour nommer la base).
-
-Garde cet URI pour l'etape suivante.
-
----
-
-## 2. Backend sur Render
+## 1. Backend sur Render
 
 1. Pousse ce depot sur GitHub (si ce n'est pas deja fait).
 2. Sur https://render.com : **New > Blueprint**, choisis ton depot.
    Render lit le fichier `render.yaml` a la racine et cree le service `finance-backend`.
 3. Dans les **Environment Variables** du service, remplis :
-   - `MONGODB_URI` = l'URI Atlas de l'etape 1
    - `GNEWS_API_TOKEN` = ta cle gratuite depuis https://gnews.io (pour les news ; optionnel)
    - `JWT_SECRET` est genere automatiquement.
 4. Deploie. A la fin, Render te donne une URL du type
@@ -43,9 +31,17 @@ Garde cet URI pour l'etape suivante.
 > Note : le plan gratuit Render "s'endort" apres inactivite ; la 1re requete peut
 > prendre ~30 s a reveiller le serveur.
 
+> ⚠️ **Persistance des donnees** : sur Render, le disque par defaut est
+> **ephemere** — les fichiers JSON sont effaces a chaque redeploiement ou
+> redemarrage. Pour conserver tes donnees en ligne, ajoute un **disque
+> persistant** (Render > service > *Disks* > *Add Disk*, ex. montage sur
+> `/data`) puis regle la variable `DATA_DIR=/data`. C'est deja prevu dans
+> `render.yaml`. Le plan gratuit Render n'inclut pas de disque persistant : il
+> faut un plan payant, ou se contenter de donnees non durables pour une demo.
+
 ---
 
-## 3. Front sur Vercel
+## 2. Front sur Vercel
 
 1. Sur https://vercel.com : **Add New > Project**, choisis ton depot.
 2. **IMPORTANT - Root Directory** : mets `mobile` (clique "Edit" a cote de Root Directory).
@@ -64,10 +60,10 @@ Garde cet URI pour l'etape suivante.
 
 | Endroit | Variable | Valeur |
 |---------|----------|--------|
-| Render (backend) | `MONGODB_URI` | URI MongoDB Atlas |
 | Render (backend) | `JWT_SECRET` | genere par Render |
 | Render (backend) | `GNEWS_API_TOKEN` | cle gnews.io (optionnel) |
+| Render (backend) | `DATA_DIR` | dossier du disque persistant (ex. `/data`) si tu en ajoutes un |
 | Vercel (front) | `EXPO_PUBLIC_API_URL` | URL Render + `/api` |
 
-Une fois les 3 etapes faites, ouvre l'URL Vercel, cree ton compte, et l'app
-fonctionne en ligne avec tes donnees stockees sur Atlas.
+Une fois les 2 etapes faites, ouvre l'URL Vercel, cree ton compte, et l'app
+fonctionne en ligne avec tes donnees stockees dans les fichiers JSON du backend.

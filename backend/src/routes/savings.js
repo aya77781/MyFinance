@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Saving from '../models/Saving.js';
+import { genId } from '../store.js';
 import { auth } from '../middleware/auth.js';
 
 const router = Router();
@@ -7,7 +8,9 @@ router.use(auth);
 
 router.get('/', async (req, res, next) => {
   try {
-    const items = await Saving.find({ user: req.userId }).sort({ createdAt: -1 });
+    const items = Saving.find({ user: req.userId }).sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
     res.json(items);
   } catch (e) {
     next(e);
@@ -16,7 +19,7 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const item = await Saving.create({ ...req.body, user: req.userId });
+    const item = Saving.insert({ ...req.body, user: req.userId });
     res.status(201).json(item);
   } catch (e) {
     next(e);
@@ -26,11 +29,7 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { user, ...data } = req.body;
-    const item = await Saving.findOneAndUpdate(
-      { _id: req.params.id, user: req.userId },
-      data,
-      { new: true }
-    );
+    const item = Saving.update({ _id: req.params.id, user: req.userId }, data);
     if (!item) return res.status(404).json({ error: 'Epargne introuvable' });
     res.json(item);
   } catch (e) {
@@ -42,12 +41,17 @@ router.put('/:id', async (req, res, next) => {
 router.post('/:id/contributions', async (req, res, next) => {
   try {
     const { amount, note } = req.body;
-    const item = await Saving.findOne({ _id: req.params.id, user: req.userId });
+    const item = Saving.findOne({ _id: req.params.id, user: req.userId });
     if (!item) return res.status(404).json({ error: 'Epargne introuvable' });
-    item.contributions.push({ amount, note });
-    item.currentAmount += Number(amount);
-    await item.save();
-    res.json(item);
+    item.contributions.push({
+      _id: genId(),
+      amount: Number(amount),
+      note: note || '',
+      date: new Date().toISOString(),
+    });
+    item.currentAmount = Number(item.currentAmount) + Number(amount);
+    const saved = Saving.save(item);
+    res.json(saved);
   } catch (e) {
     next(e);
   }
@@ -55,7 +59,7 @@ router.post('/:id/contributions', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    await Saving.findOneAndDelete({ _id: req.params.id, user: req.userId });
+    Saving.remove({ _id: req.params.id, user: req.userId });
     res.status(204).end();
   } catch (e) {
     next(e);

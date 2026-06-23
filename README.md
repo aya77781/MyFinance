@@ -5,26 +5,25 @@ Suivi des revenus stables, charges fixes, depenses par categorie, epargnes et
 challenges financiers, avec visualisation (donut par categorie + tendance 6 mois).
 
 - **Mobile** : Expo / React Native (mono-utilisateur, devise EUR, francais)
-- **Backend** : Node + Express + Mongoose
-- **Base de donnees** : MongoDB
+- **Backend** : Node + Express
+- **Base de donnees** : fichiers JSON (dossier `backend/data/`, aucune base externe)
 
 ## Architecture
 
 ```
 App/
-  backend/   API REST + MongoDB
+  backend/   API REST + stockage fichiers JSON (backend/data/)
   mobile/    App Expo (React Native)
 ```
 
-Une app mobile ne se connecte pas directement a MongoDB. L'app parle au backend
-(HTTP/JSON), et le backend parle a MongoDB.
+Une app mobile ne lit pas directement les fichiers de donnees. L'app parle au
+backend (HTTP/JSON), et le backend lit/ecrit les fichiers JSON de `backend/data/`.
 
 ## 1. Prerequis
 
 - Node.js 18+ (teste avec Node 22)
-- MongoDB :
-  - soit **MongoDB local** (installe `MongoDB Community Server`, le service ecoute sur `27017`)
-  - soit **MongoDB Atlas** (gratuit) : recupere ton URI de connexion
+- Aucune base de donnees a installer : les donnees sont stockees dans des
+  fichiers JSON (`backend/data/`), crees automatiquement au premier lancement.
 - L'application mobile **Expo Go** sur ton telephone (App Store / Play Store),
   ou un emulateur Android / iOS.
 
@@ -68,9 +67,9 @@ Pour tout arreter : `Ctrl + C` une seule fois.
 > (evite les erreurs `EADDRINUSE` quand un lancement precedent ne s'est pas
 > bien arrete).
 
-> Avant le premier lancement, configure la base si besoin : copie
-> `backend/.env.example` en `backend/.env` et adapte `MONGODB_URI`
-> (local `mongodb://127.0.0.1:27017/finance_app` ou un URI MongoDB Atlas).
+> Avant le premier lancement, configure le backend si besoin : copie
+> `backend/.env.example` en `backend/.env`. Aucune base a configurer ; tu peux
+> seulement changer `DATA_DIR` pour deplacer le dossier des fichiers JSON.
 
 ### Connexion app -> backend
 
@@ -97,8 +96,8 @@ Si besoin, force l'adresse en editant `mobile/src/config.js` (`API_PORT` ou le h
 
 ## Mise en ligne
 
-Voir [DEPLOY.md](DEPLOY.md) : front sur Vercel, backend sur Render, base sur
-MongoDB Atlas. L'URL de l'API se configure via `EXPO_PUBLIC_API_URL`.
+Voir [DEPLOY.md](DEPLOY.md) : front sur Vercel, backend sur Render (stockage
+fichiers JSON). L'URL de l'API se configure via `EXPO_PUBLIC_API_URL`.
 
 ## 5. API (resume)
 

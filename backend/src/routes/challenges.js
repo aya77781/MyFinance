@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Challenge from '../models/Challenge.js';
+import { genId } from '../store.js';
 import { auth } from '../middleware/auth.js';
 
 const router = Router();
@@ -7,7 +8,9 @@ router.use(auth);
 
 router.get('/', async (req, res, next) => {
   try {
-    const items = await Challenge.find({ user: req.userId }).sort({ createdAt: -1 });
+    const items = Challenge.find({ user: req.userId }).sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
     res.json(items);
   } catch (e) {
     next(e);
@@ -16,7 +19,7 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const item = await Challenge.create({ ...req.body, user: req.userId });
+    const item = Challenge.insert({ ...req.body, user: req.userId });
     res.status(201).json(item);
   } catch (e) {
     next(e);
@@ -26,11 +29,7 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { user, ...data } = req.body;
-    const item = await Challenge.findOneAndUpdate(
-      { _id: req.params.id, user: req.userId },
-      data,
-      { new: true }
-    );
+    const item = Challenge.update({ _id: req.params.id, user: req.userId }, data);
     if (!item) return res.status(404).json({ error: 'Challenge introuvable' });
     res.json(item);
   } catch (e) {
@@ -42,15 +41,20 @@ router.put('/:id', async (req, res, next) => {
 router.post('/:id/entries', async (req, res, next) => {
   try {
     const { amount, note } = req.body;
-    const item = await Challenge.findOne({ _id: req.params.id, user: req.userId });
+    const item = Challenge.findOne({ _id: req.params.id, user: req.userId });
     if (!item) return res.status(404).json({ error: 'Challenge introuvable' });
-    item.entries.push({ amount, note });
-    item.currentAmount += Number(amount);
+    item.entries.push({
+      _id: genId(),
+      amount: Number(amount),
+      note: note || '',
+      date: new Date().toISOString(),
+    });
+    item.currentAmount = Number(item.currentAmount) + Number(amount);
     if (item.targetAmount > 0 && item.currentAmount >= item.targetAmount) {
       item.status = 'done';
     }
-    await item.save();
-    res.json(item);
+    const saved = Challenge.save(item);
+    res.json(saved);
   } catch (e) {
     next(e);
   }
@@ -58,7 +62,7 @@ router.post('/:id/entries', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    await Challenge.findOneAndDelete({ _id: req.params.id, user: req.userId });
+    Challenge.remove({ _id: req.params.id, user: req.userId });
     res.status(204).end();
   } catch (e) {
     next(e);

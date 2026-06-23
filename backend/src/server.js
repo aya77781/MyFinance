@@ -2,7 +2,6 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { connectDB } from './db.js';
 
 import authRoutes from './routes/auth.js';
 import categories from './routes/categories.js';
@@ -11,6 +10,7 @@ import charges from './routes/charges.js';
 import transactions from './routes/transactions.js';
 import savings from './routes/savings.js';
 import challenges from './routes/challenges.js';
+import opportunities from './routes/opportunities.js';
 import dashboard from './routes/dashboard.js';
 import market from './routes/market.js';
 
@@ -29,6 +29,7 @@ app.use('/api/charges', charges);
 app.use('/api/transactions', transactions);
 app.use('/api/savings', savings);
 app.use('/api/challenges', challenges);
+app.use('/api/opportunities', opportunities);
 app.use('/api/dashboard', dashboard);
 app.use('/api/market', market);
 
@@ -39,8 +40,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-const URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/finance_app';
 
-connectDB(URI).then(() => {
-  app.listen(PORT, () => console.log(`API demarree sur http://localhost:${PORT}`));
-});
+// Donnees stockees dans des fichiers JSON (dossier backend/data/), aucune base requise.
+app.listen(PORT, () => console.log(`API demarree sur http://localhost:${PORT}`));

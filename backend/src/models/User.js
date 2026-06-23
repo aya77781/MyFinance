@@ -1,17 +1,11 @@
-import mongoose from 'mongoose';
+import { Collection } from '../store.js';
 
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, trim: true, default: '' },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    passwordHash: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+// Utilisateur. On ne renvoie jamais passwordHash au client (voir publicUser).
+export default new Collection('users', {
+  defaults: { name: '' },
+});
 
-// Ne jamais renvoyer le hash du mot de passe au client.
-userSchema.methods.toPublic = function () {
-  return { id: this._id, name: this.name, email: this.email, createdAt: this.createdAt };
-};
-
-export default mongoose.model('User', userSchema);
+export function publicUser(u) {
+  if (!u) return null;
+  return { id: u._id, name: u.name, email: u.email, createdAt: u.createdAt };
+}

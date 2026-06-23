@@ -106,3 +106,10 @@ export const Challenges = {
   addEntry: (id, data) => api.post(`/challenges/${id}/entries`, data),
   remove: (id) => api.del(`/challenges/${id}`),
 };
+
+export const Opportunities = {
+  list: () => api.get('/opportunities'),
+  create: (data) => api.post('/opportunities', data),
+  update: (id, data) => api.put(`/opportunities/${id}`, data),
+  remove: (id) => api.del(`/opportunities/${id}`),
+};

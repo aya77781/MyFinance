@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Transaction from '../models/Transaction.js';
+import { withCategory, withCategories } from '../populate.js';
 import { auth } from '../middleware/auth.js';
 
 const router = Router();
@@ -9,17 +10,20 @@ router.get('/', async (req, res, next) => {
   try {
     const filter = { user: req.userId };
     if (req.query.type) filter.type = req.query.type;
-    if (req.query.from || req.query.to) {
-      filter.date = {};
-      if (req.query.from) filter.date.$gte = new Date(req.query.from);
-      if (req.query.to) filter.date.$lte = new Date(req.query.to);
+    let items = Transaction.find(filter);
+
+    if (req.query.from) {
+      const from = new Date(req.query.from).getTime();
+      items = items.filter((t) => new Date(t.date).getTime() >= from);
     }
+    if (req.query.to) {
+      const to = new Date(req.query.to).getTime();
+      items = items.filter((t) => new Date(t.date).getTime() <= to);
+    }
+
+    items.sort((a, b) => new Date(b.date) - new Date(a.date));
     const limit = Math.min(Number(req.query.limit) || 100, 500);
-    const items = await Transaction.find(filter)
-      .populate('category')
-      .sort({ date: -1 })
-      .limit(limit);
-    res.json(items);
+    res.json(withCategories(items.slice(0, limit)));
   } catch (e) {
     next(e);
   }
@@ -27,9 +31,10 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const item = await Transaction.create({ ...req.body, user: req.userId });
-    const populated = await item.populate('category');
-    res.status(201).json(populated);
+    const data = { ...req.body, user: req.userId };
+    if (!data.date) data.date = new Date().toISOString();
+    const item = Transaction.insert(data);
+    res.status(201).json(withCategory(item));
   } catch (e) {
     next(e);
   }
@@ -38,13 +43,9 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { user, ...data } = req.body;
-    const item = await Transaction.findOneAndUpdate(
-      { _id: req.params.id, user: req.userId },
-      data,
-      { new: true }
-    ).populate('category');
+    const item = Transaction.update({ _id: req.params.id, user: req.userId }, data);
     if (!item) return res.status(404).json({ error: 'Transaction introuvable' });
-    res.json(item);
+    res.json(withCategory(item));
   } catch (e) {
     next(e);
   }
@@ -52,7 +53,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    await Transaction.findOneAndDelete({ _id: req.params.id, user: req.userId });
+    Transaction.remove({ _id: req.params.id, user: req.userId });
     res.status(204).end();
   } catch (e) {
     next(e);

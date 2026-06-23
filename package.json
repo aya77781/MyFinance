@@ -1,7 +1,7 @@
 {
   "name": "finance-app",
   "version": "1.0.0",
-  "description": "App de finances personnelles (backend Express + MongoDB, mobile Expo)",
+  "description": "App de finances personnelles (backend Express + stockage fichiers JSON, mobile Expo)",
   "private": true,
   "scripts": {
     "setup": "npm install && npm --prefix backend install && npm --prefix mobile install",
