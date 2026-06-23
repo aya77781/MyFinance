@@ -1,8 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm --prefix mobile install",
-  "buildCommand": "npm --prefix mobile run vercel-build",
+  "installCommand": "npm install && npm --prefix mobile install",
+  "buildCommand": "EXPO_PUBLIC_API_URL=/api npm --prefix mobile run vercel-build",
   "outputDirectory": "mobile/dist",
   "framework": null,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

@@ -1,69 +1,59 @@
-# Mettre l'app en ligne
+# Mettre l'app en ligne (tout sur Vercel)
 
-L'app a 2 morceaux a heberger :
+Front (app web Expo) **et** backend (API Express) sont heberges sur **un seul
+projet Vercel** :
 
-1. **Backend** (Express + stockage fichiers JSON) -> Render
-2. **Front** (app web Expo) -> Vercel
+- L'app web est servie en statique (export Expo).
+- L'API tourne en **fonction serverless** (`api/index.js`, qui reutilise
+  `backend/src/app.js`). Toutes les requetes `/api/*` y sont redirigees.
 
-Il n'y a **aucune base de donnees externe** : le backend stocke tout dans des
-fichiers JSON (`backend/data/`).
-
-> Pourquoi le 404 sur Vercel au depart ? Parce que Vercel pointait sur la racine
-> du depot (un monorepo backend + mobile) sans rien a servir. Il faut lui dire de
-> construire l'app web depuis le dossier `mobile/`, ET heberger le backend a part.
-
-Fais les etapes dans l'ordre.
+> ⚠️ **Persistance des donnees** : Vercel est serverless, son disque est en
+> lecture seule sauf `/tmp`, qui est **ephemere**. Le stockage en fichiers JSON
+> ecrit donc dans `/tmp` et les donnees (comptes inclus) sont **perdues** a
+> chaque "cold start" / redeploiement. C'est adapte a une **demo**, pas a un
+> usage durable. Pour des donnees qui persistent, heberge le backend sur une
+> plateforme avec disque (Render + disque persistant), ou remplace le stockage
+> fichiers par un magasin gere (Vercel KV/Postgres).
 
 ---
 
-## 1. Backend sur Render
+## 1. Importer le projet sur Vercel
 
 1. Pousse ce depot sur GitHub (si ce n'est pas deja fait).
-2. Sur https://render.com : **New > Blueprint**, choisis ton depot.
-   Render lit le fichier `render.yaml` a la racine et cree le service `finance-backend`.
-3. Dans les **Environment Variables** du service, remplis :
-   - `GNEWS_API_TOKEN` = ta cle gratuite depuis https://gnews.io (pour les news ; optionnel)
-   - `JWT_SECRET` est genere automatiquement.
-4. Deploie. A la fin, Render te donne une URL du type
-   `https://finance-backend.onrender.com`.
-5. Verifie : ouvrir cette URL doit afficher `{"name":"Finance API","status":"ok"}`.
+2. Sur https://vercel.com : **Add New > Project**, choisis le depot `MyFinance`.
+3. **IMPORTANT — Root Directory** : laisse la **racine du depot** (`./`).
+   **NE mets PAS `mobile`** : Vercel doit utiliser le `vercel.json` racine (qui
+   build le front *et* expose le dossier `api/`). Si un ancien projet pointait
+   sur `mobile`, change-le dans **Settings > General > Root Directory**.
+4. Laisse les autres reglages par defaut (le `vercel.json` racine s'occupe de
+   l'install, du build et des redirections).
+5. Deploie. Tu obtiens une URL `https://...vercel.app` : c'est ton app.
 
-> Note : le plan gratuit Render "s'endort" apres inactivite ; la 1re requete peut
-> prendre ~30 s a reveiller le serveur.
-
-> ⚠️ **Persistance des donnees** : sur Render, le disque par defaut est
-> **ephemere** — les fichiers JSON sont effaces a chaque redeploiement ou
-> redemarrage. Pour conserver tes donnees en ligne, ajoute un **disque
-> persistant** (Render > service > *Disks* > *Add Disk*, ex. montage sur
-> `/data`) puis regle la variable `DATA_DIR=/data`. C'est deja prevu dans
-> `render.yaml`. Le plan gratuit Render n'inclut pas de disque persistant : il
-> faut un plan payant, ou se contenter de donnees non durables pour une demo.
+L'URL de l'API est **relative** (`/api`), injectee au build via
+`EXPO_PUBLIC_API_URL=/api` (voir `vercel.json`). Front et back partageant le
+meme domaine, il n'y a aucune URL externe a configurer.
 
 ---
 
-## 2. Front sur Vercel
+## 2. Variables d'environnement (optionnel)
 
-1. Sur https://vercel.com : **Add New > Project**, choisis ton depot.
-2. **IMPORTANT - Root Directory** : mets `mobile` (clique "Edit" a cote de Root Directory).
-   Vercel utilisera alors `mobile/vercel.json` (build `npx expo export -p web`, sortie `dist`).
-3. **Environment Variables** : ajoute
-   - `EXPO_PUBLIC_API_URL` = l'URL Render + `/api`, ex :
-     `https://finance-backend.onrender.com/api`
-4. Deploie. Tu obtiens une URL `https://...vercel.app` : c'est ton app.
+Aucune variable n'est obligatoire pour que la connexion/inscription marche.
+Pour aller plus loin, dans **Settings > Environment Variables** :
 
-> Si tu changes `EXPO_PUBLIC_API_URL` plus tard, il faut **redeployer** le front
-> (la variable est integree au build).
+| Variable | Role | Defaut |
+|----------|------|--------|
+| `JWT_SECRET` | Cle de signature des tokens | une valeur de dev par defaut (mets-en une vraie en prod) |
+| `GNEWS_API_TOKEN` | Actus finance (onglet Marche) | vide = pas de news |
+
+> Apres avoir change une variable, **redeploie** (les variables `EXPO_PUBLIC_*`
+> sont integrees au build du front).
 
 ---
 
-## Recapitulatif des variables
+## Verifier que ca marche
 
-| Endroit | Variable | Valeur |
-|---------|----------|--------|
-| Render (backend) | `JWT_SECRET` | genere par Render |
-| Render (backend) | `GNEWS_API_TOKEN` | cle gnews.io (optionnel) |
-| Render (backend) | `DATA_DIR` | dossier du disque persistant (ex. `/data`) si tu en ajoutes un |
-| Vercel (front) | `EXPO_PUBLIC_API_URL` | URL Render + `/api` |
-
-Une fois les 2 etapes faites, ouvre l'URL Vercel, cree ton compte, et l'app
-fonctionne en ligne avec tes donnees stockees dans les fichiers JSON du backend.
+- Ouvre `https://ton-app.vercel.app/api` -> doit afficher
+  `{"name":"Finance API","status":"ok"}` (preuve que l'API serverless repond).
+- Sur l'app, cree un compte : l'inscription doit reussir (plus de 404).
+- Garde en tete que les donnees peuvent disparaitre apres un moment d'inactivite
+  (limite `/tmp` decrite plus haut).

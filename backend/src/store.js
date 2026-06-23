@@ -6,7 +6,14 @@ import crypto from 'crypto';
 // Stockage simple base sur des fichiers JSON (aucune base de donnees requise).
 // Chaque "collection" = un fichier <nom>.json dans le dossier data/.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+
+// Sur Vercel (serverless), le seul dossier inscriptible est /tmp, et il est
+// EPHEMERE : les donnees y sont perdues a chaque "cold start". En local, on
+// utilise backend/data/. On peut forcer le dossier via DATA_DIR.
+const DEFAULT_DIR = process.env.VERCEL
+  ? '/tmp/finance-data'
+  : path.join(__dirname, '..', 'data');
+const DATA_DIR = process.env.DATA_DIR || DEFAULT_DIR;
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
