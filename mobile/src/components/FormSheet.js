@@ -34,6 +34,9 @@ export default function FormSheet({
 
   const set = (k, v) => setValues((prev) => ({ ...prev, [k]: v }));
 
+  // fields peut etre un tableau ou une fonction des valeurs courantes (champs conditionnels).
+  const resolvedFields = typeof fields === 'function' ? fields(values) : fields;
+
   const submit = async () => {
     try {
       setSaving(true);
@@ -64,7 +67,7 @@ export default function FormSheet({
             </View>
 
             <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 420 }}>
-              {fields.map((f) => (
+              {resolvedFields.map((f) => (
                 <View key={f.key} style={styles.field}>
                   <Text style={styles.label}>{f.label}</Text>
 

@@ -11,6 +11,17 @@ import EmptyState from '../components/EmptyState';
 import { colors, spacing, font } from '../theme';
 import { Transactions, Categories } from '../api';
 
+// Sources possibles pour un revenu (independantes des categories de depense).
+const INCOME_SOURCES = [
+  { label: 'Salaire', value: 'Salaire' },
+  { label: 'Menage', value: 'Menage' },
+  { label: 'Babysitting', value: 'Babysitting' },
+  { label: 'Tutoring', value: 'Tutoring' },
+  { label: 'Freelance', value: 'Freelance' },
+  { label: 'Competition', value: 'Competition' },
+  { label: 'Autre', value: '__autre__' },
+];
+
 export default function TransactionsScreen() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -37,12 +48,19 @@ export default function TransactionsScreen() {
 
   const create = async (v) => {
     if (!v.amount) return;
+    const isIncome = v.type === 'income';
+    // Pour un revenu, la "provenance" remplace la categorie de depense.
+    const source = isIncome
+      ? v.source === '__autre__'
+        ? (v.sourceOther || '').trim() || 'Autre'
+        : v.source || ''
+      : '';
     await Transactions.create({
       type: v.type || 'expense',
       amount: Number(v.amount),
-      category: v.category || null,
+      category: isIncome ? null : v.category || null,
       note: v.note || '',
-      source: v.source || '',
+      source,
     });
     load();
   };
@@ -61,26 +79,44 @@ export default function TransactionsScreen() {
     ]);
   };
 
-  const fields = [
-    {
-      key: 'type',
-      label: 'Type',
-      type: 'select',
-      options: [
-        { label: 'Depense', value: 'expense' },
-        { label: 'Revenu', value: 'income' },
-      ],
-    },
-    { key: 'amount', label: 'Montant', type: 'number', placeholder: '0' },
-    {
-      key: 'category',
-      label: 'Categorie',
-      type: 'select',
-      options: categories.map((c) => ({ label: c.name, value: c._id, color: c.color })),
-    },
-    { key: 'note', label: 'Note', type: 'text', placeholder: 'Optionnel' },
-    { key: 'source', label: 'Provenance (revenu)', type: 'text', placeholder: 'Ex : freelance, revente' },
-  ];
+  // Champs dynamiques : un revenu n'a pas de categorie de depense mais une source.
+  const fields = (v) => {
+    const isIncome = v.type === 'income';
+    return [
+      {
+        key: 'type',
+        label: 'Type',
+        type: 'select',
+        options: [
+          { label: 'Depense', value: 'expense' },
+          { label: 'Revenu', value: 'income' },
+        ],
+      },
+      { key: 'amount', label: 'Montant', type: 'number', placeholder: '0' },
+      isIncome
+        ? {
+            key: 'source',
+            label: 'Source du revenu',
+            type: 'select',
+            options: INCOME_SOURCES,
+          }
+        : {
+            key: 'category',
+            label: 'Categorie',
+            type: 'select',
+            options: categories.map((c) => ({ label: c.name, value: c._id, color: c.color })),
+          },
+      isIncome && v.source === '__autre__'
+        ? {
+            key: 'sourceOther',
+            label: 'Preciser la source',
+            type: 'text',
+            placeholder: 'Ex : remboursement, cadeau, vente',
+          }
+        : null,
+      { key: 'note', label: 'Note', type: 'text', placeholder: 'Optionnel' },
+    ].filter(Boolean);
+  };
 
   // Regroupe par jour pour un rendu type Revolut.
   const grouped = items.reduce((acc, tx) => {
