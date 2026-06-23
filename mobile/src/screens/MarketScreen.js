@@ -9,6 +9,44 @@ import Glyph from '../components/Glyph';
 import { colors, spacing, font, radius, ff } from '../theme';
 import { Market } from '../api';
 import { getItem, setItem } from '../storage';
+import { useT, registerTranslations } from '../i18n';
+
+registerTranslations({
+  fr: {
+    'market.title': 'Marche',
+    'market.subtitle': 'Actus & opportunites',
+    'market.tab.news': 'Actualites',
+    'market.tab.opps': 'Opportunites',
+    'market.news.notConfigured.title': 'Actualites non configurees',
+    'market.news.notConfigured.text':
+      'Ajoute une cle GNews gratuite (GNEWS_API_TOKEN) dans le backend pour afficher les news.',
+    'market.news.empty.title': 'Aucune actualite',
+    'market.news.empty.text': 'Reessaie plus tard ou change de region.',
+    'market.opps.empty.title': 'Aucune opportunite',
+    'market.opps.empty.text': "Change de region pour voir d'autres idees.",
+    'market.opps.risk': 'Risque {risk}',
+    'market.timeAgo.min': '{n} min',
+    'market.timeAgo.hours': '{n} h',
+    'market.timeAgo.days': '{n} j',
+  },
+  en: {
+    'market.title': 'Market',
+    'market.subtitle': 'News & opportunities',
+    'market.tab.news': 'News',
+    'market.tab.opps': 'Opportunities',
+    'market.news.notConfigured.title': 'News not configured',
+    'market.news.notConfigured.text':
+      'Add a free GNews key (GNEWS_API_TOKEN) in the backend to display the news.',
+    'market.news.empty.title': 'No news',
+    'market.news.empty.text': 'Try again later or change region.',
+    'market.opps.empty.title': 'No opportunity',
+    'market.opps.empty.text': 'Change region to see other ideas.',
+    'market.opps.risk': '{risk} risk',
+    'market.timeAgo.min': '{n} min',
+    'market.timeAgo.hours': '{n} h',
+    'market.timeAgo.days': '{n} d',
+  },
+});
 
 const REGION_KEY = 'finance_region';
 
@@ -19,6 +57,7 @@ const RISK_TONE = {
 };
 
 export default function MarketScreen() {
+  const t = useT();
   const [region, setRegion] = useState('FR');
   const [regions, setRegions] = useState([{ key: 'FR', label: 'France' }]);
   const [news, setNews] = useState(null);
@@ -66,8 +105,8 @@ export default function MarketScreen() {
 
   return (
     <Screen
-      title="Marche"
-      subtitle="Actus & opportunites"
+      title={t('market.title')}
+      subtitle={t('market.subtitle')}
       refreshing={refreshing}
       onRefresh={() => {
         setRefreshing(true);
@@ -94,8 +133,8 @@ export default function MarketScreen() {
 
       {/* Onglets News / Opportunites */}
       <View style={styles.segment}>
-        <Seg label="Actualites" icon="news" active={tab === 'news'} onPress={() => setTab('news')} />
-        <Seg label="Opportunites" icon="trending" active={tab === 'opps'} onPress={() => setTab('opps')} />
+        <Seg label={t('market.tab.news')} icon="news" active={tab === 'news'} onPress={() => setTab('news')} />
+        <Seg label={t('market.tab.opps')} icon="trending" active={tab === 'opps'} onPress={() => setTab('opps')} />
       </View>
 
       {loading ? (
@@ -110,12 +149,13 @@ export default function MarketScreen() {
 }
 
 function NewsList({ news }) {
+  const t = useT();
   if (news && news.configured === false) {
     return (
       <Card>
         <EmptyState
-          title="Actualites non configurees"
-          text="Ajoute une cle GNews gratuite (GNEWS_API_TOKEN) dans le backend pour afficher les news."
+          title={t('market.news.notConfigured.title')}
+          text={t('market.news.notConfigured.text')}
         />
       </Card>
     );
@@ -124,7 +164,7 @@ function NewsList({ news }) {
   if (articles.length === 0) {
     return (
       <Card>
-        <EmptyState title="Aucune actualite" text="Reessaie plus tard ou change de region." />
+        <EmptyState title={t('market.news.empty.title')} text={t('market.news.empty.text')} />
       </Card>
     );
   }
@@ -137,7 +177,7 @@ function NewsList({ news }) {
             <View style={{ flex: 1, padding: spacing.lg }}>
               <Text style={styles.articleSource}>
                 {a.source}
-                {a.publishedAt ? ` · ${timeAgo(a.publishedAt)}` : ''}
+                {a.publishedAt ? ` · ${timeAgo(a.publishedAt, t)}` : ''}
               </Text>
               <Text style={styles.articleTitle} numberOfLines={3}>
                 {a.title}
@@ -151,10 +191,11 @@ function NewsList({ news }) {
 }
 
 function OppsList({ items }) {
+  const t = useT();
   if (!items.length) {
     return (
       <Card>
-        <EmptyState title="Aucune opportunite" text="Change de region pour voir d'autres idees." />
+        <EmptyState title={t('market.opps.empty.title')} text={t('market.opps.empty.text')} />
       </Card>
     );
   }
@@ -166,7 +207,7 @@ function OppsList({ items }) {
             <Text style={styles.oppType}>{o.type}</Text>
             <View style={[styles.riskBadge, { backgroundColor: `${RISK_TONE[o.risk] || colors.textMuted}1A` }]}>
               <Text style={[styles.riskText, { color: RISK_TONE[o.risk] || colors.textMuted }]}>
-                Risque {o.risk?.toLowerCase()}
+                {t('market.opps.risk', { risk: o.risk?.toLowerCase() })}
               </Text>
             </View>
           </View>
@@ -188,11 +229,11 @@ function Seg({ label, icon, active, onPress }) {
   );
 }
 
-function timeAgo(iso) {
+function timeAgo(iso, t) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 3600) return `${Math.max(1, Math.round(diff / 60))} min`;
-  if (diff < 86400) return `${Math.round(diff / 3600)} h`;
-  return `${Math.round(diff / 86400)} j`;
+  if (diff < 3600) return t('market.timeAgo.min', { n: Math.max(1, Math.round(diff / 60)) });
+  if (diff < 86400) return t('market.timeAgo.hours', { n: Math.round(diff / 3600) });
+  return t('market.timeAgo.days', { n: Math.round(diff / 86400) });
 }
 
 const styles = StyleSheet.create({

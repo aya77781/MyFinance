@@ -12,8 +12,61 @@ import EmptyState from '../components/EmptyState';
 import { colors, spacing, font, radius, palette } from '../theme';
 import { euro } from '../format';
 import { Challenges } from '../api';
+import { useT, registerTranslations } from '../i18n';
+
+registerTranslations({
+  fr: {
+    'challenges.title': 'Challenges',
+    'challenges.subtitle': 'Mettre plus de cote',
+    'challenges.bannerLabel': 'Cumul des challenges',
+    'challenges.bannerSub': '{count} challenge(s) en cours',
+    'challenges.emptyTitle': 'Aucun challenge',
+    'challenges.emptyText': 'Lance un defi (no-spend, 52 semaines...) pour booster ton epargne.',
+    'challenges.done': 'Termine',
+    'challenges.deleteTitle': 'Supprimer',
+    'challenges.deleteConfirm': 'Supprimer "{name}" ?',
+    'challenges.cancel': 'Annuler',
+    'challenges.delete': 'Supprimer',
+    'challenges.createTitle': 'Nouveau challenge',
+    'challenges.fieldName': 'Nom',
+    'challenges.fieldNamePlaceholder': 'Ex : No-spend 30 jours',
+    'challenges.fieldDescription': 'Description',
+    'challenges.fieldOptional': 'Optionnel',
+    'challenges.fieldTarget': 'Objectif',
+    'challenges.fieldColor': 'Couleur',
+    'challenges.entryTitle': 'Progres : {name}',
+    'challenges.fieldAmount': 'Montant mis de cote',
+    'challenges.fieldNote': 'Note',
+    'challenges.submit': 'Valider',
+  },
+  en: {
+    'challenges.title': 'Challenges',
+    'challenges.subtitle': 'Set aside more',
+    'challenges.bannerLabel': 'Total of challenges',
+    'challenges.bannerSub': '{count} challenge(s) in progress',
+    'challenges.emptyTitle': 'No challenge',
+    'challenges.emptyText': 'Start a challenge (no-spend, 52 weeks...) to boost your savings.',
+    'challenges.done': 'Completed',
+    'challenges.deleteTitle': 'Delete',
+    'challenges.deleteConfirm': 'Delete "{name}"?',
+    'challenges.cancel': 'Cancel',
+    'challenges.delete': 'Delete',
+    'challenges.createTitle': 'New challenge',
+    'challenges.fieldName': 'Name',
+    'challenges.fieldNamePlaceholder': 'E.g. No-spend 30 days',
+    'challenges.fieldDescription': 'Description',
+    'challenges.fieldOptional': 'Optional',
+    'challenges.fieldTarget': 'Target',
+    'challenges.fieldColor': 'Color',
+    'challenges.entryTitle': 'Progress: {name}',
+    'challenges.fieldAmount': 'Amount set aside',
+    'challenges.fieldNote': 'Note',
+    'challenges.submit': 'Confirm',
+  },
+});
 
 export default function ChallengesScreen() {
+  const t = useT();
   const [items, setItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [createSheet, setCreateSheet] = useState(false);
@@ -54,10 +107,10 @@ export default function ChallengesScreen() {
   };
 
   const confirmDelete = (item) => {
-    Alert.alert('Supprimer', `Supprimer "${item.name}" ?`, [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('challenges.deleteTitle'), t('challenges.deleteConfirm', { name: item.name }), [
+      { text: t('challenges.cancel'), style: 'cancel' },
       {
-        text: 'Supprimer',
+        text: t('challenges.delete'),
         style: 'destructive',
         onPress: async () => {
           await Challenges.remove(item._id);
@@ -72,8 +125,8 @@ export default function ChallengesScreen() {
   return (
     <>
       <Screen
-        title="Challenges"
-        subtitle="Mettre plus de cote"
+        title={t('challenges.title')}
+        subtitle={t('challenges.subtitle')}
         action={<AddButton onPress={() => setCreateSheet(true)} />}
         refreshing={refreshing}
         onRefresh={() => {
@@ -82,18 +135,18 @@ export default function ChallengesScreen() {
         }}
       >
         <GradientCard style={{ marginBottom: spacing.lg }}>
-          <Text style={styles.bannerLabel}>Cumul des challenges</Text>
+          <Text style={styles.bannerLabel}>{t('challenges.bannerLabel')}</Text>
           <Text style={styles.bannerValue}>{euro(totalSetAside)}</Text>
           <Text style={styles.bannerSub}>
-            {items.filter((c) => c.status === 'active').length} challenge(s) en cours
+            {t('challenges.bannerSub', { count: items.filter((c) => c.status === 'active').length })}
           </Text>
         </GradientCard>
 
         {items.length === 0 ? (
           <Card>
             <EmptyState
-              title="Aucun challenge"
-              text="Lance un defi (no-spend, 52 semaines...) pour booster ton epargne."
+              title={t('challenges.emptyTitle')}
+              text={t('challenges.emptyText')}
             />
           </Card>
         ) : (
@@ -101,7 +154,7 @@ export default function ChallengesScreen() {
             <GoalCard
               key={item._id}
               title={item.name}
-              subtitle={item.status === 'done' ? 'Termine' : item.description}
+              subtitle={item.status === 'done' ? t('challenges.done') : item.description}
               current={item.currentAmount}
               target={item.targetAmount}
               color={item.color}
@@ -114,14 +167,14 @@ export default function ChallengesScreen() {
 
       <FormSheet
         visible={createSheet}
-        title="Nouveau challenge"
+        title={t('challenges.createTitle')}
         fields={[
-          { key: 'name', label: 'Nom', type: 'text', placeholder: 'Ex : No-spend 30 jours' },
-          { key: 'description', label: 'Description', type: 'text', placeholder: 'Optionnel' },
-          { key: 'target', label: 'Objectif', type: 'number', placeholder: '0' },
+          { key: 'name', label: t('challenges.fieldName'), type: 'text', placeholder: t('challenges.fieldNamePlaceholder') },
+          { key: 'description', label: t('challenges.fieldDescription'), type: 'text', placeholder: t('challenges.fieldOptional') },
+          { key: 'target', label: t('challenges.fieldTarget'), type: 'number', placeholder: '0' },
           {
             key: 'color',
-            label: 'Couleur',
+            label: t('challenges.fieldColor'),
             type: 'select',
             options: palette.map((c) => ({ label: ' ', value: c, color: c })),
           },
@@ -133,12 +186,12 @@ export default function ChallengesScreen() {
 
       <FormSheet
         visible={!!entryTarget}
-        title={entryTarget ? `Progres : ${entryTarget.name}` : ''}
+        title={entryTarget ? t('challenges.entryTitle', { name: entryTarget.name }) : ''}
         fields={[
-          { key: 'amount', label: 'Montant mis de cote', type: 'number', placeholder: '0' },
-          { key: 'note', label: 'Note', type: 'text', placeholder: 'Optionnel' },
+          { key: 'amount', label: t('challenges.fieldAmount'), type: 'number', placeholder: '0' },
+          { key: 'note', label: t('challenges.fieldNote'), type: 'text', placeholder: t('challenges.fieldOptional') },
         ]}
-        submitLabel="Valider"
+        submitLabel={t('challenges.submit')}
         onSubmit={addEntry}
         onClose={() => setEntryTarget(null)}
       />

@@ -1,8 +1,15 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, radius, spacing } from '../theme';
+import { useT, registerTranslations } from '../i18n';
+
+registerTranslations({
+  fr: { 'chart.income': 'Revenus', 'chart.expense': 'Depenses' },
+  en: { 'chart.income': 'Income', 'chart.expense': 'Expenses' },
+});
 
 // Barres groupees (revenus vs depenses) sur 6 mois. data = [{label, income, expense}].
 export default function BarChart({ data = [], height = 140 }) {
+  const t = useT();
   const max =
     Math.max(1, ...data.flatMap((d) => [d.income || 0, d.expense || 0])) || 1;
 
@@ -36,8 +43,8 @@ export default function BarChart({ data = [], height = 140 }) {
         ))}
       </View>
       <View style={styles.legend}>
-        <Legend color={colors.positive} text="Revenus" />
-        <Legend color={colors.primary} text="Depenses" />
+        <Legend color={colors.positive} text={t('chart.income')} />
+        <Legend color={colors.primary} text={t('chart.expense')} />
       </View>
     </View>
   );

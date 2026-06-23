@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import User, { publicUser } from '../models/User.js';
 import Category from '../models/Category.js';
 import { signToken, auth } from '../middleware/auth.js';
-import { DEFAULT_CATEGORIES } from '../defaults.js';
+import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../defaults.js';
 
 const router = Router();
 
@@ -24,7 +24,9 @@ router.post('/register', async (req, res, next) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.insert({ name: name || '', email: normalizedEmail, passwordHash });
 
-    await Category.insertMany(DEFAULT_CATEGORIES.map((c) => ({ ...c, user: user._id })));
+    await Category.insertMany(
+      [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES].map((c) => ({ ...c, user: user._id }))
+    );
 
     const token = signToken(user._id);
     res.status(201).json({ token, user: publicUser(user) });

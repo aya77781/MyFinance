@@ -5,7 +5,7 @@ import { auth } from '../middleware/auth.js';
 const router = Router();
 router.use(auth);
 
-const STATUSES = ['open', 'won', 'lost'];
+const STATUSES = ['open', 'won', 'lost', 'paid'];
 
 // Normalise le corps recu en un document propre.
 function clean(body = {}) {
@@ -15,6 +15,10 @@ function clean(body = {}) {
   if (body.amount != null) data.amount = Number(body.amount) || 0;
   if (body.status != null && STATUSES.includes(body.status)) data.status = body.status;
   if (body.result != null) data.result = Number(body.result) || 0;
+  // Dates (ISO ou null) : date de l'opportunite, date du gain/cloture, date du paiement.
+  if (body.date !== undefined) data.date = body.date || null;
+  if (body.closedAt !== undefined) data.closedAt = body.closedAt || null;
+  if (body.paidAt !== undefined) data.paidAt = body.paidAt || null;
   return data;
 }
 
@@ -37,8 +41,14 @@ router.post('/', async (req, res, next) => {
       ...data,
       user: req.userId,
       status,
-      // Si on cree directement avec un statut cloture, on date la cloture.
-      closedAt: status === 'open' ? null : new Date().toISOString(),
+      date: data.date || new Date().toISOString(),
+      // La date de cloture fournie par le client prevaut ; sinon on date si cloture.
+      closedAt:
+        data.closedAt !== undefined
+          ? data.closedAt
+          : status === 'open'
+            ? null
+            : new Date().toISOString(),
     });
     res.status(201).json(item);
   } catch (e) {
@@ -53,12 +63,17 @@ router.put('/:id', async (req, res, next) => {
 
     const data = clean(req.body);
     const nextStatus = data.status || item.status;
-    // Met a jour la date de cloture quand on passe en gagne/perdu (ou retour en cours).
-    if (data.status && data.status !== item.status) {
+    // Met a jour la date de cloture au changement de statut SEULEMENT si le client
+    // n'a pas fourni de date explicite.
+    if (data.status && data.status !== item.status && data.closedAt === undefined) {
       data.closedAt = data.status === 'open' ? null : new Date().toISOString();
     }
-    // Si on repasse "en cours", on remet le resultat a zero.
-    if (nextStatus === 'open') data.result = 0;
+    // Si on repasse "en cours", on remet le resultat a zero et on efface les dates de cloture.
+    if (nextStatus === 'open') {
+      data.result = 0;
+      data.closedAt = null;
+      data.paidAt = null;
+    }
 
     const saved = await Opportunity.update({ _id: req.params.id, user: req.userId }, data);
     res.json(saved);

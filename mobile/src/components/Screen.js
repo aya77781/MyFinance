@@ -28,7 +28,7 @@ export default function Screen({ title, subtitle, action, refreshing, onRefresh,
         }
       >
         {children}
-        <View style={{ height: 110 }} />
+        <View style={{ height: spacing.xl }} />
       </ScrollView>
     </View>
   );

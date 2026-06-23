@@ -14,8 +14,51 @@ import DonutChart from '../components/DonutChart';
 import CategoryIcon from '../components/CategoryIcon';
 import TransactionRow from '../components/TransactionRow';
 import EmptyState from '../components/EmptyState';
+import { useT, registerTranslations } from '../i18n';
+
+registerTranslations({
+  fr: {
+    'dashboard.serverDown': 'Serveur injoignable',
+    'dashboard.serverDownHint': 'Verifie que le backend tourne. ({error})',
+    'dashboard.balanceLabel': 'Solde du mois · {month}',
+    'dashboard.add': 'Ajouter',
+    'dashboard.savings': 'Epargne',
+    'dashboard.challenges': 'Challenges',
+    'dashboard.budget': 'Budget',
+    'dashboard.income': 'Entrees',
+    'dashboard.expensesFlow': 'Sorties',
+    'dashboard.analyses': 'Analyses',
+    'dashboard.noExpensesTitle': 'Aucune depense ce mois',
+    'dashboard.noExpensesText': 'Ajoute des transactions pour voir la repartition.',
+    'dashboard.expenses': 'Depenses',
+    'dashboard.recent': 'Recent',
+    'dashboard.seeAll': 'Tout voir',
+    'dashboard.emptyRecentTitle': "Rien pour l'instant",
+    'dashboard.emptyRecentText': 'Tes mouvements apparaitront ici.',
+  },
+  en: {
+    'dashboard.serverDown': 'Server unreachable',
+    'dashboard.serverDownHint': 'Make sure the backend is running. ({error})',
+    'dashboard.balanceLabel': 'Monthly balance · {month}',
+    'dashboard.add': 'Add',
+    'dashboard.savings': 'Savings',
+    'dashboard.challenges': 'Challenges',
+    'dashboard.budget': 'Budget',
+    'dashboard.income': 'Income',
+    'dashboard.expensesFlow': 'Expenses',
+    'dashboard.analyses': 'Analytics',
+    'dashboard.noExpensesTitle': 'No expenses this month',
+    'dashboard.noExpensesText': 'Add transactions to see the breakdown.',
+    'dashboard.expenses': 'Expenses',
+    'dashboard.recent': 'Recent',
+    'dashboard.seeAll': 'See all',
+    'dashboard.emptyRecentTitle': 'Nothing yet',
+    'dashboard.emptyRecentText': 'Your activity will show up here.',
+  },
+});
 
 export default function DashboardScreen({ navigation }) {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [data, setData] = useState(null);
@@ -52,8 +95,8 @@ export default function DashboardScreen({ navigation }) {
   if (error) {
     return (
       <View style={[styles.center, { padding: spacing.xl }]}>
-        <Text style={[font.title, { textAlign: 'center', marginBottom: 6 }]}>Serveur injoignable</Text>
-        <Text style={[font.caption, { textAlign: 'center' }]}>Verifie que le backend tourne. ({error})</Text>
+        <Text style={[font.title, { textAlign: 'center', marginBottom: 6 }]}>{t('dashboard.serverDown')}</Text>
+        <Text style={[font.caption, { textAlign: 'center' }]}>{t('dashboard.serverDownHint', { error })}</Text>
       </View>
     );
   }
@@ -67,7 +110,7 @@ export default function DashboardScreen({ navigation }) {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={{ paddingBottom: spacing.xl }}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
@@ -88,9 +131,13 @@ export default function DashboardScreen({ navigation }) {
         style={[styles.header, { paddingTop: insets.top + spacing.md }]}
       >
         <View style={styles.topbar}>
-          <View style={styles.avatar}>
+          <Pressable
+            onPress={() => navigation.navigate('Budget')}
+            style={({ pressed }) => [styles.avatar, pressed && { opacity: 0.7 }]}
+            hitSlop={8}
+          >
             <Text style={styles.avatarText}>{initials}</Text>
-          </View>
+          </Pressable>
           <Pressable onPress={() => navigation.navigate('Budget')} style={styles.topBtn} hitSlop={8}>
             <View style={styles.topBtnDot} />
             <View style={styles.topBtnDot} />
@@ -98,36 +145,36 @@ export default function DashboardScreen({ navigation }) {
           </Pressable>
         </View>
 
-        <Text style={styles.balanceLabel}>Solde du mois · {monthLabel(year, month)}</Text>
+        <Text style={styles.balanceLabel}>{t('dashboard.balanceLabel', { month: monthLabel(year, month) })}</Text>
         <Balance value={s.net} />
 
         <View style={styles.actions}>
-          <ActionTile glyph="plus" label="Ajouter" onBrand onPress={() => navigation.navigate('Transactions')} />
-          <ActionTile glyph="savings" label="Epargne" onBrand onPress={() => navigation.navigate('Epargne')} />
-          <ActionTile glyph="target" label="Challenges" onBrand onPress={() => navigation.navigate('Challenges')} />
-          <ActionTile glyph="wallet" label="Budget" onBrand onPress={() => navigation.navigate('Budget')} />
+          <ActionTile glyph="plus" label={t('dashboard.add')} onBrand onPress={() => navigation.navigate('Transactions')} />
+          <ActionTile glyph="savings" label={t('dashboard.savings')} onBrand onPress={() => navigation.navigate('Epargne')} />
+          <ActionTile glyph="target" label={t('dashboard.challenges')} onBrand onPress={() => navigation.navigate('Challenges')} />
+          <ActionTile glyph="wallet" label={t('dashboard.budget')} onBrand onPress={() => navigation.navigate('Budget')} />
         </View>
       </LinearGradient>
 
       <View style={styles.body}>
         {/* Entrees / sorties */}
         <View style={styles.flowRow}>
-          <Flow label="Entrees" value={euro(s.realIncome)} tone={colors.positive} />
+          <Flow label={t('dashboard.income')} value={euro(s.realIncome)} tone={colors.positive} />
           <View style={styles.flowDivider} />
-          <Flow label="Sorties" value={euro(s.totalOut)} tone={colors.negative} />
+          <Flow label={t('dashboard.expensesFlow')} value={euro(s.totalOut)} tone={colors.negative} />
         </View>
 
         {/* Analyses */}
-        <Text style={styles.section}>Analyses</Text>
+        <Text style={styles.section}>{t('dashboard.analyses')}</Text>
         <Card>
           {donutData.length === 0 ? (
-            <EmptyState title="Aucune depense ce mois" text="Ajoute des transactions pour voir la repartition." />
+            <EmptyState title={t('dashboard.noExpensesTitle')} text={t('dashboard.noExpensesText')} />
           ) : (
             <>
               <View style={styles.donutWrap}>
                 <DonutChart data={donutData} size={148} strokeWidth={18}>
                   <View style={{ alignItems: 'center' }}>
-                    <Text style={font.caption}>Depenses</Text>
+                    <Text style={font.caption}>{t('dashboard.expenses')}</Text>
                     <Text style={styles.donutTotal}>{euro(totalExpenses)}</Text>
                   </View>
                 </DonutChart>
@@ -150,14 +197,14 @@ export default function DashboardScreen({ navigation }) {
 
         {/* Recent */}
         <View style={styles.sectionRow}>
-          <Text style={styles.section}>Recent</Text>
+          <Text style={styles.section}>{t('dashboard.recent')}</Text>
           <Pressable onPress={() => navigation.navigate('Transactions')} hitSlop={8}>
-            <Text style={styles.link}>Tout voir</Text>
+            <Text style={styles.link}>{t('dashboard.seeAll')}</Text>
           </Pressable>
         </View>
         <Card padded={false} style={{ paddingHorizontal: spacing.lg }}>
           {data.recentTransactions.length === 0 ? (
-            <EmptyState title="Rien pour l'instant" text="Tes mouvements apparaitront ici." />
+            <EmptyState title={t('dashboard.emptyRecentTitle')} text={t('dashboard.emptyRecentText')} />
           ) : (
             data.recentTransactions.map((tx, i) => (
               <View
@@ -180,7 +227,9 @@ function Balance({ value }) {
   const [intPart, decPart] = formatted.split(',');
   return (
     <View style={styles.balance}>
-      <Text style={styles.balanceInt}>{intPart}</Text>
+      <Text style={styles.balanceInt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+        {intPart}
+      </Text>
       {decPart ? <Text style={styles.balanceDec}>,{decPart}</Text> : null}
     </View>
   );
@@ -236,7 +285,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   balance: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', marginTop: 6 },
-  balanceInt: { ...font.hero },
+  balanceInt: { ...font.hero, flexShrink: 1 },
   balanceDec: { color: '#fff', fontFamily: ff.bold, fontSize: 24, marginTop: 6, opacity: 0.85 },
   actions: { flexDirection: 'row', marginTop: spacing.xl, gap: spacing.sm },
   body: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },

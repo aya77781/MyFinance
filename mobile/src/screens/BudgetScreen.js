@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, Pressable, Alert, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Alert, StyleSheet, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import Screen from '../components/Screen';
@@ -7,14 +7,179 @@ import Card from '../components/Card';
 import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
 import CategoryIcon from '../components/CategoryIcon';
+import TimelineChart from '../components/TimelineChart';
+import DonutChart from '../components/DonutChart';
+import { glyphForCategory } from '../components/Glyph';
 import EmptyState from '../components/EmptyState';
-import { colors, spacing, font, radius, palette } from '../theme';
-import { euro } from '../format';
+import { colors, spacing, font, radius, palette, ff } from '../theme';
+import { euro, getLocale } from '../format';
 import { Income, Charges, Categories, Transactions } from '../api';
 import Button from '../components/Button';
 import { useAuth } from '../AuthContext';
+import { useT, registerTranslations, useLang, LANGUAGES } from '../i18n';
+
+registerTranslations({
+  fr: {
+    'budget.title': 'Budget',
+    'budget.subtitle': 'Revenus & charges',
+    'budget.remaining': 'Reste a vivre previsionnel',
+    'budget.incomeSummary': '+{a} revenus',
+    'budget.chargesSummary': '-{a} charges',
+    'budget.budgetsSummary': '-{a} budgets',
+    'budget.stableIncome': 'Revenus stables',
+    'budget.noIncome': 'Aucun revenu',
+    'budget.noIncomeText': 'Ajoute ton salaire ou tes revenus recurrents.',
+    'budget.fixedCharges': 'Charges fixes',
+    'budget.noCharges': 'Aucune charge',
+    'budget.noChargesText': 'Ajoute ton loyer, tes abonnements...',
+    'budget.monthExpenses': 'Depenses du mois',
+    'budget.expenseCategories': 'Categories de depense',
+    'budget.noCategory': 'Aucune categorie',
+    'budget.noExpenseCatText': 'Cree des categories pour classer tes depenses.',
+    'budget.incomeCategories': 'Categories de revenu',
+    'budget.noIncomeCatText': 'Cree des categories pour classer tes revenus.',
+    'budget.hint': 'Touche une categorie pour la modifier (et definir un budget). Appui long pour supprimer.',
+    'budget.timeTracking': 'Suivi dans le temps',
+    'budget.month': 'Mois',
+    'budget.year': 'Annee',
+    'budget.cumulativeTotal': 'Total cumule (reste de tous les mois)',
+    'budget.netPositive': 'Net positif',
+    'budget.netNegative': 'Net negatif',
+    'budget.cumulative': 'Cumul',
+    'budget.noData': 'Pas encore de donnees.',
+    'budget.expensesOverTime': 'Depenses dans le temps',
+    'budget.perYear': 'Par annee',
+    'budget.perMonth': 'Par mois',
+    'budget.expenseBreakdown': 'Repartition des depenses',
+    'budget.total': 'Total',
+    'budget.breakdownEmpty': 'Ajoute des charges fixes ou un budget pour voir la repartition.',
+    'budget.loggedInAs': 'Connecte en tant que',
+    'budget.logout': 'Se deconnecter',
+    'budget.noBudget': 'Aucun budget',
+    'budget.budgetPerMonth': 'Budget {a}/mois',
+    'budget.onDayOfMonth': 'Le {d} du mois',
+    'budget.incomeSub': '{name} · le {d}',
+    'budget.paidSaved': 'Paye {a} · economise {b}',
+    'budget.paidMore': 'Paye {a} · +{b} de plus',
+    'budget.paid': 'Paye {a}',
+    'budget.planned': 'Prevu {a}',
+    'budget.validate': 'Valider',
+    'budget.cancel': 'Annuler',
+    'budget.add': 'Ajouter',
+    'budget.defaultNote': 'Budget {month}',
+    // Sheets
+    'budget.sheet.newIncome': 'Nouveau revenu stable',
+    'budget.sheet.name': 'Nom',
+    'budget.sheet.namePhSalary': 'Ex : Salaire mars',
+    'budget.sheet.incomeCategory': 'Categorie de revenu',
+    'budget.sheet.monthlyAmount': 'Montant mensuel',
+    'budget.sheet.dayOfMonth': 'Jour du mois',
+    'budget.sheet.newCharge': 'Nouvelle charge fixe',
+    'budget.sheet.namePhRent': 'Ex : Loyer',
+    'budget.sheet.category': 'Categorie',
+    'budget.sheet.editCategory': 'Modifier la categorie',
+    'budget.sheet.newCategory': 'Nouvelle categorie',
+    'budget.sheet.namePhLeisure': 'Ex : Loisirs',
+    'budget.sheet.plannedBudget': 'Budget mensuel prevu (laisser vide si aucun)',
+    'budget.sheet.color': 'Couleur',
+    'budget.sheet.editIncomeCategory': 'Modifier la categorie de revenu',
+    'budget.sheet.newIncomeCategory': 'Nouvelle categorie de revenu',
+    'budget.sheet.namePhIncomeCat': 'Ex : Salaire, Freelance',
+    'budget.sheet.validateTitle': 'Valider {name}',
+    'budget.sheet.actualPaid': 'Montant reel paye',
+    'budget.sheet.note': 'Note',
+    'budget.sheet.notePh': 'Optionnel',
+    // Alerts
+    'budget.alert.deleteTitle': 'Supprimer',
+    'budget.alert.deleteMsg': 'Supprimer "{name}" ?',
+    'budget.alert.cancelTitle': 'Annuler',
+    'budget.alert.cancelMsg': 'Annuler la validation ? La depense liee sera supprimee.',
+    'budget.alert.back': 'Retour',
+    'budget.alert.cancelExpense': 'Annuler la depense',
+  },
+  en: {
+    'budget.title': 'Budget',
+    'budget.subtitle': 'Income & expenses',
+    'budget.remaining': 'Projected disposable income',
+    'budget.incomeSummary': '+{a} income',
+    'budget.chargesSummary': '-{a} expenses',
+    'budget.budgetsSummary': '-{a} budgets',
+    'budget.stableIncome': 'Stable income',
+    'budget.noIncome': 'No income',
+    'budget.noIncomeText': 'Add your salary or recurring income.',
+    'budget.fixedCharges': 'Fixed expenses',
+    'budget.noCharges': 'No expenses',
+    'budget.noChargesText': 'Add your rent, subscriptions...',
+    'budget.monthExpenses': 'This month’s expenses',
+    'budget.expenseCategories': 'Expense categories',
+    'budget.noCategory': 'No category',
+    'budget.noExpenseCatText': 'Create categories to sort your expenses.',
+    'budget.incomeCategories': 'Income categories',
+    'budget.noIncomeCatText': 'Create categories to sort your income.',
+    'budget.hint': 'Tap a category to edit it (and set a budget). Long-press to delete.',
+    'budget.timeTracking': 'Tracking over time',
+    'budget.month': 'Month',
+    'budget.year': 'Year',
+    'budget.cumulativeTotal': 'Cumulative total (carryover from all months)',
+    'budget.netPositive': 'Net positive',
+    'budget.netNegative': 'Net negative',
+    'budget.cumulative': 'Cumulative',
+    'budget.noData': 'No data yet.',
+    'budget.expensesOverTime': 'Expenses over time',
+    'budget.perYear': 'Per year',
+    'budget.perMonth': 'Per month',
+    'budget.expenseBreakdown': 'Expense breakdown',
+    'budget.total': 'Total',
+    'budget.breakdownEmpty': 'Add fixed expenses or a budget to see the breakdown.',
+    'budget.loggedInAs': 'Logged in as',
+    'budget.logout': 'Log out',
+    'budget.noBudget': 'No budget',
+    'budget.budgetPerMonth': 'Budget {a}/month',
+    'budget.onDayOfMonth': 'On day {d} of the month',
+    'budget.incomeSub': '{name} · on day {d}',
+    'budget.paidSaved': 'Paid {a} · saved {b}',
+    'budget.paidMore': 'Paid {a} · +{b} more',
+    'budget.paid': 'Paid {a}',
+    'budget.planned': 'Planned {a}',
+    'budget.validate': 'Confirm',
+    'budget.cancel': 'Cancel',
+    'budget.add': 'Add',
+    'budget.defaultNote': 'Budget {month}',
+    // Sheets
+    'budget.sheet.newIncome': 'New stable income',
+    'budget.sheet.name': 'Name',
+    'budget.sheet.namePhSalary': 'E.g. March salary',
+    'budget.sheet.incomeCategory': 'Income category',
+    'budget.sheet.monthlyAmount': 'Monthly amount',
+    'budget.sheet.dayOfMonth': 'Day of the month',
+    'budget.sheet.newCharge': 'New fixed expense',
+    'budget.sheet.namePhRent': 'E.g. Rent',
+    'budget.sheet.category': 'Category',
+    'budget.sheet.editCategory': 'Edit category',
+    'budget.sheet.newCategory': 'New category',
+    'budget.sheet.namePhLeisure': 'E.g. Leisure',
+    'budget.sheet.plannedBudget': 'Planned monthly budget (leave empty if none)',
+    'budget.sheet.color': 'Color',
+    'budget.sheet.editIncomeCategory': 'Edit income category',
+    'budget.sheet.newIncomeCategory': 'New income category',
+    'budget.sheet.namePhIncomeCat': 'E.g. Salary, Freelance',
+    'budget.sheet.validateTitle': 'Confirm {name}',
+    'budget.sheet.actualPaid': 'Actual amount paid',
+    'budget.sheet.note': 'Note',
+    'budget.sheet.notePh': 'Optional',
+    // Alerts
+    'budget.alert.deleteTitle': 'Delete',
+    'budget.alert.deleteMsg': 'Delete "{name}"?',
+    'budget.alert.cancelTitle': 'Cancel',
+    'budget.alert.cancelMsg': 'Cancel the confirmation? The linked expense will be deleted.',
+    'budget.alert.back': 'Back',
+    'budget.alert.cancelExpense': 'Cancel the expense',
+  },
+});
 
 export default function BudgetScreen() {
+  const t = useT();
+  const { lang, setLang } = useLang();
   const { user, logout } = useAuth();
   const [income, setIncome] = useState([]);
   const [charges, setCharges] = useState([]);
@@ -24,11 +189,12 @@ export default function BudgetScreen() {
   const [sheet, setSheet] = useState(null); // 'income' | 'charge' | 'category' | 'validate'
   const [editingCat, setEditingCat] = useState(null); // categorie en cours d'edition
   const [validating, setValidating] = useState(null); // categorie a valider ce mois
+  const [timeMode, setTimeMode] = useState('month'); // 'month' | 'year'
 
   // Mois courant : cle technique (YYYY-MM) pour tagguer les validations + libelle.
   const now = new Date();
   const MONTH_KEY = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const MONTH_LABEL = now.toLocaleDateString('fr-FR', { month: 'long' });
+  const MONTH_LABEL = now.toLocaleDateString(getLocale(), { month: 'long' });
 
   const load = useCallback(async () => {
     try {
@@ -55,8 +221,13 @@ export default function BudgetScreen() {
     }, [load])
   );
 
-  // Categories avec un budget mensuel prevu (a valider chaque mois).
-  const budgetCats = categories.filter((c) => Number(c.planned) > 0);
+  // Separation depense / revenu.
+  const expenseCats = categories.filter((c) => c.type !== 'income');
+  const incomeCats = categories.filter((c) => c.type === 'income');
+  const incomeCatById = new Map(incomeCats.map((c) => [c._id, c]));
+
+  // Categories de depense avec un budget mensuel prevu (a valider chaque mois).
+  const budgetCats = expenseCats.filter((c) => Number(c.planned) > 0);
   const totalPlanned = budgetCats.reduce((s, c) => s + Number(c.planned), 0);
 
   // Validations du mois courant : categorie -> transaction (taguee budget_month).
@@ -70,6 +241,102 @@ export default function BudgetScreen() {
   const totalCharges = charges.reduce((s, c) => (c.active ? s + c.amount : s), 0);
   const dispo = totalIncome - totalCharges - totalPlanned;
 
+  // --- Suivi dans le temps : net par periode + cumul (config stable projetee). ---
+  const timeline = (() => {
+    const curY = now.getFullYear();
+    const curM = now.getMonth();
+    // Premier mois avec un mouvement (sinon mois courant).
+    let startY = curY;
+    let startM = curM;
+    for (const t of transactions) {
+      const d = new Date(t.date);
+      if (isNaN(d)) continue;
+      if (d.getFullYear() < startY || (d.getFullYear() === startY && d.getMonth() < startM)) {
+        startY = d.getFullYear();
+        startM = d.getMonth();
+      }
+    }
+    // Agregation des transactions reelles par mois.
+    const agg = {};
+    for (const t of transactions) {
+      const d = new Date(t.date);
+      if (isNaN(d)) continue;
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      const b = (agg[key] = agg[key] || { income: 0, expense: 0 });
+      if (t.type === 'income') b.income += Number(t.amount || 0);
+      else b.expense += Number(t.amount || 0);
+    }
+    // Liste des mois de la periode (borne a 60 par securite).
+    const months = [];
+    let y = startY;
+    let m = startM;
+    while ((y < curY || (y === curY && m <= curM)) && months.length < 60) {
+      months.push({ y, m });
+      m += 1;
+      if (m > 11) {
+        m = 0;
+        y += 1;
+      }
+    }
+    let run = 0;
+    const monthly = months.map(({ y: yy, m: mm }) => {
+      const a = agg[`${yy}-${mm}`] || { income: 0, expense: 0 };
+      // Depenses du mois = charges fixes (config) + depenses reelles taggees ce mois.
+      const expense = totalCharges + a.expense;
+      const net = totalIncome - totalCharges + a.income - a.expense;
+      run += net;
+      return {
+        y: yy,
+        net,
+        expense,
+        cumulative: run,
+        label: new Date(yy, mm, 1).toLocaleDateString(getLocale(), { month: 'short' }),
+      };
+    });
+    // Vue annuelle : net = somme des mois de l'annee, cumul = cumul a la fin de l'annee.
+    const ymap = new Map();
+    for (const d of monthly) {
+      const e = ymap.get(d.y) || { y: d.y, net: 0, expense: 0, cumulative: 0 };
+      e.net += d.net;
+      e.expense += d.expense;
+      e.cumulative = d.cumulative;
+      ymap.set(d.y, e);
+    }
+    return {
+      total: run,
+      month: monthly.slice(-12).map((d) => ({ label: d.label, net: d.net, expense: d.expense, cumulative: d.cumulative })),
+      year: [...ymap.values()].map((e) => ({
+        label: String(e.y),
+        net: e.net,
+        expense: e.expense,
+        cumulative: e.cumulative,
+      })),
+    };
+  })();
+  const timeData = timeMode === 'year' ? timeline.year : timeline.month;
+  const expenseBars = timeData.map((d) => ({ label: d.label, value: d.expense }));
+
+  // Repartition des depenses mensuelles par categorie (charges fixes + budgets prevus).
+  const expenseBreakdown = (() => {
+    const map = new Map();
+    const add = (name, amount, color) => {
+      if (!amount) return;
+      const e = map.get(name) || { name, total: 0, color };
+      e.total += amount;
+      if (color) e.color = color;
+      map.set(name, e);
+    };
+    charges.forEach((c) =>
+      c.active !== false && add(c.category?.name || c.name, Number(c.amount) || 0, c.category?.color)
+    );
+    budgetCats.forEach((c) => add(c.name, Number(c.planned) || 0, c.color));
+    const list = [...map.values()].sort((a, b) => b.total - a.total);
+    // Couleur de repli (palette) pour les entrees sans couleur de categorie.
+    return list.map((e, i) => ({ ...e, color: e.color || palette[i % palette.length] }));
+  })();
+  const expenseTotal = expenseBreakdown.reduce((s, e) => s + e.total, 0);
+  const donutExpense = expenseBreakdown.map((e) => ({ value: e.total, color: e.color }));
+
   const closeSheet = () => {
     setSheet(null);
     setEditingCat(null);
@@ -78,7 +345,7 @@ export default function BudgetScreen() {
 
   const openEditCat = (c) => {
     setEditingCat(c);
-    setSheet('category');
+    setSheet(c.type === 'income' ? 'incomeCategory' : 'category');
   };
 
   const openValidate = (c) => {
@@ -88,7 +355,12 @@ export default function BudgetScreen() {
 
   const submit = async (v) => {
     if (sheet === 'income') {
-      await Income.create({ name: v.name, amount: Number(v.amount), dayOfMonth: Number(v.day) || 1 });
+      await Income.create({
+        name: v.name,
+        amount: Number(v.amount),
+        dayOfMonth: Number(v.day) || 1,
+        category: v.category || null,
+      });
     } else if (sheet === 'charge') {
       await Charges.create({
         name: v.name,
@@ -97,7 +369,16 @@ export default function BudgetScreen() {
         dayOfMonth: Number(v.day) || 1,
       });
     } else if (sheet === 'category') {
-      const payload = { name: v.name, color: v.color || palette[0], planned: Number(v.planned) || 0 };
+      const payload = {
+        name: v.name,
+        color: v.color || palette[0],
+        planned: Number(v.planned) || 0,
+        type: 'expense',
+      };
+      if (editingCat) await Categories.update(editingCat._id, payload);
+      else await Categories.create(payload);
+    } else if (sheet === 'incomeCategory') {
+      const payload = { name: v.name, color: v.color || palette[0], type: 'income' };
       if (editingCat) await Categories.update(editingCat._id, payload);
       else await Categories.create(payload);
     } else if (sheet === 'validate' && validating) {
@@ -108,17 +389,17 @@ export default function BudgetScreen() {
         category: validating._id,
         amount: Number(v.amount) || Number(validating.planned),
         budgetMonth: MONTH_KEY,
-        note: v.note || `Budget ${MONTH_LABEL}`,
+        note: v.note || t('budget.defaultNote', { month: MONTH_LABEL }),
       });
     }
     load();
   };
 
   const removeItem = (kind, item, after) => {
-    Alert.alert('Supprimer', `Supprimer "${item.name}" ?`, [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('budget.alert.deleteTitle'), t('budget.alert.deleteMsg', { name: item.name }), [
+      { text: t('budget.cancel'), style: 'cancel' },
       {
-        text: 'Supprimer',
+        text: t('budget.alert.deleteTitle'),
         style: 'destructive',
         onPress: async () => {
           if (kind === 'income') await Income.remove(item._id);
@@ -133,10 +414,10 @@ export default function BudgetScreen() {
 
   const cancelValidate = (tx) => {
     if (!tx) return;
-    Alert.alert('Annuler', 'Annuler la validation ? La depense liee sera supprimee.', [
-      { text: 'Retour', style: 'cancel' },
+    Alert.alert(t('budget.alert.cancelTitle'), t('budget.alert.cancelMsg'), [
+      { text: t('budget.alert.back'), style: 'cancel' },
       {
-        text: 'Annuler la depense',
+        text: t('budget.alert.cancelExpense'),
         style: 'destructive',
         onPress: async () => {
           await Transactions.remove(tx._id);
@@ -148,40 +429,56 @@ export default function BudgetScreen() {
 
   const sheetConfig = {
     income: {
-      title: 'Nouveau revenu stable',
+      title: t('budget.sheet.newIncome'),
       fields: [
-        { key: 'name', label: 'Nom', type: 'text', placeholder: 'Ex : Salaire' },
-        { key: 'amount', label: 'Montant mensuel', type: 'number', placeholder: '0' },
-        { key: 'day', label: 'Jour du mois', type: 'number', placeholder: '1' },
+        { key: 'name', label: t('budget.sheet.name'), type: 'text', placeholder: t('budget.sheet.namePhSalary') },
+        {
+          key: 'category',
+          label: t('budget.sheet.incomeCategory'),
+          type: 'select',
+          options: incomeCats.map((c) => ({
+            label: c.name,
+            value: c._id,
+            color: c.color,
+            glyph: glyphForCategory(c.name),
+          })),
+        },
+        { key: 'amount', label: t('budget.sheet.monthlyAmount'), type: 'number', placeholder: '0' },
+        { key: 'day', label: t('budget.sheet.dayOfMonth'), type: 'number', placeholder: '1' },
       ],
     },
     charge: {
-      title: 'Nouvelle charge fixe',
+      title: t('budget.sheet.newCharge'),
       fields: [
-        { key: 'name', label: 'Nom', type: 'text', placeholder: 'Ex : Loyer' },
-        { key: 'amount', label: 'Montant mensuel', type: 'number', placeholder: '0' },
+        { key: 'name', label: t('budget.sheet.name'), type: 'text', placeholder: t('budget.sheet.namePhRent') },
+        { key: 'amount', label: t('budget.sheet.monthlyAmount'), type: 'number', placeholder: '0' },
         {
           key: 'category',
-          label: 'Categorie',
+          label: t('budget.sheet.category'),
           type: 'select',
-          options: categories.map((c) => ({ label: c.name, value: c._id, color: c.color })),
+          options: expenseCats.map((c) => ({
+            label: c.name,
+            value: c._id,
+            color: c.color,
+            glyph: glyphForCategory(c.name),
+          })),
         },
-        { key: 'day', label: 'Jour du mois', type: 'number', placeholder: '1' },
+        { key: 'day', label: t('budget.sheet.dayOfMonth'), type: 'number', placeholder: '1' },
       ],
     },
     category: {
-      title: editingCat ? 'Modifier la categorie' : 'Nouvelle categorie',
+      title: editingCat ? t('budget.sheet.editCategory') : t('budget.sheet.newCategory'),
       fields: [
-        { key: 'name', label: 'Nom', type: 'text', placeholder: 'Ex : Loisirs' },
+        { key: 'name', label: t('budget.sheet.name'), type: 'text', placeholder: t('budget.sheet.namePhLeisure') },
         {
           key: 'planned',
-          label: 'Budget mensuel prevu (laisser vide si aucun)',
+          label: t('budget.sheet.plannedBudget'),
           type: 'number',
           placeholder: '0',
         },
         {
           key: 'color',
-          label: 'Couleur',
+          label: t('budget.sheet.color'),
           type: 'select',
           options: palette.map((c) => ({ label: ' ', value: c, color: c })),
         },
@@ -195,12 +492,28 @@ export default function BudgetScreen() {
         : { color: palette[0] },
       onDelete: editingCat ? () => removeItem('category', editingCat, closeSheet) : undefined,
     },
+    incomeCategory: {
+      title: editingCat ? t('budget.sheet.editIncomeCategory') : t('budget.sheet.newIncomeCategory'),
+      fields: [
+        { key: 'name', label: t('budget.sheet.name'), type: 'text', placeholder: t('budget.sheet.namePhIncomeCat') },
+        {
+          key: 'color',
+          label: t('budget.sheet.color'),
+          type: 'select',
+          options: palette.map((c) => ({ label: ' ', value: c, color: c })),
+        },
+      ],
+      initial: editingCat
+        ? { name: editingCat.name, color: editingCat.color }
+        : { color: palette[0] },
+      onDelete: editingCat ? () => removeItem('category', editingCat, closeSheet) : undefined,
+    },
     validate: validating
       ? {
-          title: `Valider ${validating.name}`,
+          title: t('budget.sheet.validateTitle', { name: validating.name }),
           fields: [
-            { key: 'amount', label: 'Montant reel paye', type: 'number', placeholder: String(validating.planned) },
-            { key: 'note', label: 'Note', type: 'text', placeholder: 'Optionnel' },
+            { key: 'amount', label: t('budget.sheet.actualPaid'), type: 'number', placeholder: String(validating.planned) },
+            { key: 'note', label: t('budget.sheet.note'), type: 'text', placeholder: t('budget.sheet.notePh') },
           ],
           initial: { amount: String(validating.planned) },
         }
@@ -210,8 +523,8 @@ export default function BudgetScreen() {
   return (
     <>
       <Screen
-        title="Budget"
-        subtitle="Revenus & charges"
+        title={t('budget.title')}
+        subtitle={t('budget.subtitle')}
         refreshing={refreshing}
         onRefresh={() => {
           setRefreshing(true);
@@ -220,46 +533,53 @@ export default function BudgetScreen() {
       >
         {/* Resume mensuel previsionnel */}
         <GradientCard>
-          <Text style={styles.heroLabel}>Reste a vivre previsionnel</Text>
+          <Text style={styles.heroLabel}>{t('budget.remaining')}</Text>
           <Text style={styles.heroValue}>{euro(dispo)}</Text>
           <View style={styles.heroRow}>
-            <Text style={styles.heroPos}>+{euro(totalIncome)} revenus</Text>
-            <Text style={styles.heroNeg}>-{euro(totalCharges)} charges</Text>
+            <Text style={styles.heroPos}>{t('budget.incomeSummary', { a: euro(totalIncome) })}</Text>
+            <Text style={styles.heroNeg}>{t('budget.chargesSummary', { a: euro(totalCharges) })}</Text>
             {totalPlanned > 0 ? (
-              <Text style={styles.heroNeg}>-{euro(totalPlanned)} budgets</Text>
+              <Text style={styles.heroNeg}>{t('budget.budgetsSummary', { a: euro(totalPlanned) })}</Text>
             ) : null}
           </View>
         </GradientCard>
 
-        <SectionHeader title="Revenus stables" onAdd={() => setSheet('income')} />
+        <SectionHeader title={t('budget.stableIncome')} onAdd={() => setSheet('income')} />
         <Card padded={false} style={styles.listCard}>
           {income.length === 0 ? (
-            <EmptyState title="Aucun revenu" text="Ajoute ton salaire ou tes revenus recurrents." />
+            <EmptyState title={t('budget.noIncome')} text={t('budget.noIncomeText')} />
           ) : (
-            income.map((i, idx) => (
-              <Row
-                key={i._id}
-                name={i.name}
-                sub={`Le ${i.dayOfMonth} du mois`}
-                amount={euro(i.amount)}
-                color={colors.positive}
-                last={idx === income.length - 1}
-                onLongPress={() => removeItem('income', i)}
-              />
-            ))
+            income.map((i, idx) => {
+              const cat = incomeCatById.get(i.category);
+              return (
+                <Row
+                  key={i._id}
+                  name={cat?.name || i.name}
+                  sub={
+                    cat
+                      ? t('budget.incomeSub', { name: i.name || cat.name, d: i.dayOfMonth })
+                      : t('budget.onDayOfMonth', { d: i.dayOfMonth })
+                  }
+                  amount={euro(i.amount)}
+                  color={cat?.color || colors.positive}
+                  last={idx === income.length - 1}
+                  onLongPress={() => removeItem('income', i)}
+                />
+              );
+            })
           )}
         </Card>
 
-        <SectionHeader title="Charges fixes" onAdd={() => setSheet('charge')} />
+        <SectionHeader title={t('budget.fixedCharges')} onAdd={() => setSheet('charge')} />
         <Card padded={false} style={styles.listCard}>
           {charges.length === 0 ? (
-            <EmptyState title="Aucune charge" text="Ajoute ton loyer, tes abonnements..." />
+            <EmptyState title={t('budget.noCharges')} text={t('budget.noChargesText')} />
           ) : (
             charges.map((c, idx) => (
               <Row
                 key={c._id}
                 name={c.name}
-                sub={c.category?.name || `Le ${c.dayOfMonth} du mois`}
+                sub={c.category?.name || t('budget.onDayOfMonth', { d: c.dayOfMonth })}
                 amount={`-${euro(c.amount)}`}
                 color={c.category?.color || colors.negative}
                 last={idx === charges.length - 1}
@@ -272,7 +592,7 @@ export default function BudgetScreen() {
         {budgetCats.length > 0 ? (
           <>
             <View style={styles.sectionHeader}>
-              <Text style={font.h2}>Depenses du mois</Text>
+              <Text style={font.h2}>{t('budget.monthExpenses')}</Text>
               <Text style={styles.monthLabel}>{MONTH_LABEL}</Text>
             </View>
             <Card padded={false} style={styles.listCard}>
@@ -290,19 +610,19 @@ export default function BudgetScreen() {
           </>
         ) : null}
 
-        <SectionHeader title="Categories" onAdd={() => setSheet('category')} />
+        <SectionHeader title={t('budget.expenseCategories')} onAdd={() => setSheet('category')} />
         <Card padded={false} style={styles.listCard}>
-          {categories.length === 0 ? (
-            <EmptyState title="Aucune categorie" text="Cree des categories pour classer tes depenses." />
+          {expenseCats.length === 0 ? (
+            <EmptyState title={t('budget.noCategory')} text={t('budget.noExpenseCatText')} />
           ) : (
-            categories.map((c, idx) => (
+            expenseCats.map((c, idx) => (
               <Row
                 key={c._id}
                 name={c.name}
-                sub={c.planned ? `Budget ${euro(c.planned)}/mois` : 'Aucun budget'}
+                sub={c.planned ? t('budget.budgetPerMonth', { a: euro(c.planned) }) : t('budget.noBudget')}
                 amount={c.planned ? euro(c.planned) : ''}
                 color={c.color}
-                last={idx === categories.length - 1}
+                last={idx === expenseCats.length - 1}
                 onPress={() => openEditCat(c)}
                 onLongPress={() => removeItem('category', c)}
               />
@@ -310,20 +630,138 @@ export default function BudgetScreen() {
           )}
         </Card>
 
-        <Text style={styles.hint}>
-          Touche une categorie pour definir son budget mensuel. Appui long pour supprimer.
-        </Text>
+        <SectionHeader title={t('budget.incomeCategories')} onAdd={() => setSheet('incomeCategory')} />
+        <Card padded={false} style={styles.listCard}>
+          {incomeCats.length === 0 ? (
+            <EmptyState title={t('budget.noCategory')} text={t('budget.noIncomeCatText')} />
+          ) : (
+            incomeCats.map((c, idx) => (
+              <Row
+                key={c._id}
+                name={c.name}
+                color={c.color}
+                last={idx === incomeCats.length - 1}
+                onPress={() => openEditCat(c)}
+                onLongPress={() => removeItem('category', c)}
+              />
+            ))
+          )}
+        </Card>
+
+        <Text style={styles.hint}>{t('budget.hint')}</Text>
+
+        {/* Suivi dans le temps : total cumule + graphe mois / annee */}
+        <View style={styles.sectionHeader}>
+          <Text style={font.h2}>{t('budget.timeTracking')}</Text>
+          <View style={styles.toggle}>
+            <Pressable
+              onPress={() => setTimeMode('month')}
+              style={[styles.toggleBtn, timeMode === 'month' && styles.toggleActive]}
+            >
+              <Text style={[styles.toggleText, timeMode === 'month' && styles.toggleTextActive]}>
+                {t('budget.month')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setTimeMode('year')}
+              style={[styles.toggleBtn, timeMode === 'year' && styles.toggleActive]}
+            >
+              <Text style={[styles.toggleText, timeMode === 'year' && styles.toggleTextActive]}>
+                {t('budget.year')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+        <Card>
+          <Text style={font.label}>{t('budget.cumulativeTotal')}</Text>
+          <Text style={[styles.timeTotal, { color: timeline.total < 0 ? colors.negative : colors.text }]}>
+            {euro(timeline.total)}
+          </Text>
+          <View style={styles.timeLegend}>
+            <Legend color={colors.positive} text={t('budget.netPositive')} />
+            <Legend color={colors.negative} text={t('budget.netNegative')} />
+            <Legend line text={t('budget.cumulative')} />
+          </View>
+          {timeData.length ? (
+            <TimelineChart data={timeData} />
+          ) : (
+            <Text style={font.caption}>{t('budget.noData')}</Text>
+          )}
+        </Card>
+
+        {/* Depenses : evolution dans le temps (suit le selecteur Mois / Annee) */}
+        <View style={styles.sectionHeader}>
+          <Text style={font.h2}>{t('budget.expensesOverTime')}</Text>
+          <Text style={styles.monthLabel}>{timeMode === 'year' ? t('budget.perYear') : t('budget.perMonth')}</Text>
+        </View>
+        <Card>
+          {expenseBars.some((d) => d.value > 0) ? (
+            <ExpenseBars data={expenseBars} />
+          ) : (
+            <Text style={font.caption}>{t('budget.noData')}</Text>
+          )}
+        </Card>
+
+        {/* Depenses : repartition par categorie */}
+        <View style={styles.sectionHeader}>
+          <Text style={font.h2}>{t('budget.expenseBreakdown')}</Text>
+        </View>
+        <Card>
+          {expenseTotal > 0 ? (
+            <View style={styles.donutWrap}>
+              <DonutChart data={donutExpense} size={132} strokeWidth={16}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={font.caption}>{t('budget.total')}</Text>
+                  <Text style={styles.donutTotal}>{euro(expenseTotal)}</Text>
+                </View>
+              </DonutChart>
+              <View style={styles.donutLegend}>
+                {expenseBreakdown.slice(0, 6).map((e, i) => (
+                  <View key={`${e.name}-${i}`} style={styles.legendRow}>
+                    <View style={[styles.legendDot, { backgroundColor: e.color }]} />
+                    <Text style={styles.legendName} numberOfLines={1}>{e.name}</Text>
+                    <Text style={styles.legendPct}>{Math.round((e.total / expenseTotal) * 100)}%</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <Text style={font.caption}>{t('budget.breakdownEmpty')}</Text>
+          )}
+        </Card>
+
+        {/* Langue de l'application */}
+        <View style={styles.sectionHeader}>
+          <Text style={font.h2}>{t('account.language')}</Text>
+        </View>
+        <Card>
+          <Text style={font.label}>{t('account.languageHint')}</Text>
+          <View style={styles.langRow}>
+            {LANGUAGES.map((l) => {
+              const active = lang === l.code;
+              return (
+                <Pressable
+                  key={l.code}
+                  onPress={() => setLang(l.code)}
+                  style={[styles.langBtn, active && styles.langBtnActive]}
+                >
+                  <Text style={[styles.langText, active && styles.langTextActive]}>{l.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
 
         {/* Compte */}
         <View style={styles.account}>
           <View style={{ flex: 1 }}>
-            <Text style={font.label}>Connecte en tant que</Text>
+            <Text style={font.label}>{t('budget.loggedInAs')}</Text>
             <Text style={font.title} numberOfLines={1}>
               {user?.email || ''}
             </Text>
           </View>
         </View>
-        <Button title="Se deconnecter" variant="ghost" onPress={logout} />
+        <Button title={t('budget.logout')} variant="ghost" onPress={logout} />
       </Screen>
 
       <FormSheet
@@ -339,12 +777,50 @@ export default function BudgetScreen() {
   );
 }
 
+// Barres des depenses par periode, defilables horizontalement (mobile).
+function ExpenseBars({ data }) {
+  const H = 130;
+  const max = Math.max(1, ...data.map((d) => Number(d.value) || 0));
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.barsRow}
+    >
+      {data.map((d, i) => (
+        <View key={i} style={styles.barCol}>
+          <View style={[styles.barArea, { height: H }]}>
+            <View
+              style={[styles.barFill, { height: Math.max(3, (Number(d.value || 0) / max) * H) }]}
+            />
+          </View>
+          <Text style={styles.barLabel} numberOfLines={1}>{d.label}</Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+function Legend({ color, line, text }) {
+  return (
+    <View style={styles.legChip}>
+      {line ? (
+        <View style={styles.legLine} />
+      ) : (
+        <View style={[styles.legDot, { backgroundColor: color }]} />
+      )}
+      <Text style={styles.legTxt}>{text}</Text>
+    </View>
+  );
+}
+
 function SectionHeader({ title, onAdd }) {
+  const t = useT();
   return (
     <View style={styles.sectionHeader}>
       <Text style={font.h2}>{title}</Text>
       <Pressable onPress={onAdd} hitSlop={8}>
-        <Text style={styles.add}>Ajouter</Text>
+        <Text style={styles.add}>{t('budget.add')}</Text>
       </Pressable>
     </View>
   );
@@ -375,16 +851,17 @@ function Row({ name, sub, amount, color, last, onPress, onLongPress }) {
 
 // Ligne de budget mensuel : etat "a payer" (bouton Valider) ou "paye" (montant + ecart).
 function BudgetRow({ cat, tx, last, onValidate, onCancel }) {
+  const t = useT();
   const paid = !!tx;
   const actual = paid ? Number(tx.amount) : 0;
   const diff = paid ? Number(cat.planned) - actual : 0; // >0 economise, <0 depense en plus
   const sub = paid
     ? diff > 0
-      ? `Paye ${euro(actual)} · economise ${euro(diff)}`
+      ? t('budget.paidSaved', { a: euro(actual), b: euro(diff) })
       : diff < 0
-        ? `Paye ${euro(actual)} · +${euro(-diff)} de plus`
-        : `Paye ${euro(actual)}`
-    : `Prevu ${euro(cat.planned)}`;
+        ? t('budget.paidMore', { a: euro(actual), b: euro(-diff) })
+        : t('budget.paid', { a: euro(actual) })
+    : t('budget.planned', { a: euro(cat.planned) });
   return (
     <View
       style={[styles.row, !last && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
@@ -400,11 +877,11 @@ function BudgetRow({ cat, tx, last, onValidate, onCancel }) {
       </View>
       {paid ? (
         <Pressable onPress={onCancel} hitSlop={8} style={styles.cancelBtn}>
-          <Text style={styles.cancelText}>Annuler</Text>
+          <Text style={styles.cancelText}>{t('budget.cancel')}</Text>
         </Pressable>
       ) : (
         <Pressable onPress={onValidate} hitSlop={8} style={styles.validateBtn}>
-          <Text style={styles.validateText}>Valider</Text>
+          <Text style={styles.validateText}>{t('budget.validate')}</Text>
         </Pressable>
       )}
     </View>
@@ -448,7 +925,51 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelText: { color: colors.textMuted, fontWeight: '700', fontSize: 13 },
+  toggle: {
+    flexDirection: 'row',
+    backgroundColor: colors.bgSoft,
+    borderRadius: radius.full,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  toggleBtn: { paddingHorizontal: spacing.md, height: 30, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  toggleActive: { backgroundColor: colors.primary },
+  toggleText: { color: colors.textMuted, fontWeight: '700', fontSize: 13 },
+  toggleTextActive: { color: colors.textOnTeal },
+  timeTotal: { fontFamily: 'Manrope_800ExtraBold', fontSize: 30, letterSpacing: -0.8, marginTop: 2, marginBottom: spacing.md },
+  timeLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: spacing.md },
+  barsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 14, marginTop: spacing.sm, paddingHorizontal: 2 },
+  barCol: { alignItems: 'center', width: 34 },
+  barArea: { width: 34, justifyContent: 'flex-end', alignItems: 'center' },
+  barFill: { width: 20, borderRadius: 6, backgroundColor: colors.negative },
+  barLabel: { marginTop: 6, fontSize: 11, color: colors.textMuted, fontFamily: ff.semibold, textTransform: 'capitalize', textAlign: 'center', width: 34 },
+  donutWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  donutTotal: { fontFamily: ff.extrabold, fontSize: 15, color: colors.text },
+  donutLegend: { flex: 1, gap: 10 },
+  legendRow: { flexDirection: 'row', alignItems: 'center' },
+  legendDot: { width: 9, height: 9, borderRadius: 5, marginRight: spacing.sm },
+  legendName: { flex: 1, fontFamily: ff.semibold, fontSize: 13.5, color: colors.text },
+  legendPct: { fontFamily: ff.bold, fontSize: 13.5, color: colors.textMuted },
+  legChip: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legDot: { width: 9, height: 9, borderRadius: 5 },
+  legLine: { width: 14, height: 2, borderRadius: 2, backgroundColor: '#FFFFFF' },
+  legTxt: { color: colors.textMuted, fontFamily: ff.semibold, fontSize: 12 },
   hint: { ...font.caption, textAlign: 'center', marginTop: spacing.xl },
+  langRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  langBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  langText: { color: colors.text, fontFamily: ff.semibold, fontSize: 14 },
+  langTextActive: { color: colors.textOnTeal },
   account: {
     flexDirection: 'row',
     alignItems: 'center',

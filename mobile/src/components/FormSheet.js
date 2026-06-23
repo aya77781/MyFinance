@@ -9,10 +9,17 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { colors, radius, spacing, font, ff } from '../theme';
 import Button from './Button';
 import Glyph from './Glyph';
+import { useT, registerTranslations } from '../i18n';
+
+registerTranslations({
+  fr: { 'form.close': 'Fermer', 'form.delete': 'Supprimer', 'form.datePlaceholder': 'JJ/MM/AAAA' },
+  en: { 'form.close': 'Close', 'form.delete': 'Delete', 'form.datePlaceholder': 'DD/MM/YYYY' },
+});
 
 // Formulaire modal generique pilote par une config de champs.
 // fields: [{ key, label, type: 'text'|'number'|'select', options?, placeholder }]
@@ -26,8 +33,12 @@ export default function FormSheet({
   onClose,
   onDelete,
 }) {
+  const t = useT();
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
+  const { height: winH } = useWindowDimensions();
+  // Limite la zone scrollable a ~55% de l'ecran pour laisser place au clavier sur petits telephones.
+  const fieldsMaxH = Math.min(420, Math.round(winH * 0.55));
 
   useEffect(() => {
     if (visible) setValues(initial);
@@ -64,11 +75,11 @@ export default function FormSheet({
             <View style={styles.header}>
               <Text style={font.h2}>{title}</Text>
               <Pressable onPress={onClose} hitSlop={12}>
-                <Text style={styles.close}>Fermer</Text>
+                <Text style={styles.close}>{t('form.close')}</Text>
               </Pressable>
             </View>
 
-            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 420 }}>
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: fieldsMaxH }}>
               {resolvedFields.map((f) => (
                 <View key={f.key} style={styles.field}>
                   <Text style={styles.label}>{f.label}</Text>
@@ -109,9 +120,11 @@ export default function FormSheet({
                       onChangeText={(t) =>
                         set(f.key, f.type === 'number' ? t.replace(',', '.') : t)
                       }
-                      placeholder={f.placeholder}
+                      placeholder={f.placeholder || (f.type === 'date' ? t('form.datePlaceholder') : undefined)}
                       placeholderTextColor={colors.textMuted}
-                      keyboardType={f.type === 'number' ? 'decimal-pad' : 'default'}
+                      keyboardType={
+                        f.type === 'number' || f.type === 'date' ? 'numbers-and-punctuation' : 'default'
+                      }
                       style={styles.input}
                     />
                   )}
@@ -124,7 +137,7 @@ export default function FormSheet({
             </View>
             {onDelete ? (
               <Pressable onPress={onDelete} hitSlop={8} style={styles.deleteBtn}>
-                <Text style={styles.deleteText}>Supprimer</Text>
+                <Text style={styles.deleteText}>{t('form.delete')}</Text>
               </Pressable>
             ) : null}
           </View>

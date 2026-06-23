@@ -11,6 +11,28 @@ import OpportunitiesScreen from '../screens/OpportunitiesScreen';
 import MarketScreen from '../screens/MarketScreen';
 import Glyph from '../components/Glyph';
 import { colors, ff } from '../theme';
+import { useT, registerTranslations } from '../i18n';
+
+registerTranslations({
+  fr: {
+    'tabs.Accueil': 'Accueil',
+    'tabs.Transactions': 'Activite',
+    'tabs.Budget': 'Budget',
+    'tabs.Epargne': 'Epargne',
+    'tabs.Challenges': 'Defis',
+    'tabs.Opportunites': 'Opport.',
+    'tabs.Marche': 'Marche',
+  },
+  en: {
+    'tabs.Accueil': 'Home',
+    'tabs.Transactions': 'Activity',
+    'tabs.Budget': 'Budget',
+    'tabs.Epargne': 'Savings',
+    'tabs.Challenges': 'Challenges',
+    'tabs.Opportunites': 'Opport.',
+    'tabs.Marche': 'Market',
+  },
+});
 
 const Tab = createBottomTabNavigator();
 
@@ -24,18 +46,8 @@ const ICONS = {
   Marche: 'news',
 };
 
-// Labels courts pour que les onglets tiennent dans la barre.
-const LABELS = {
-  Accueil: 'Accueil',
-  Transactions: 'Activite',
-  Budget: 'Budget',
-  Epargne: 'Epargne',
-  Challenges: 'Defis',
-  Opportunites: 'Opport.',
-  Marche: 'Marche',
-};
-
 export default function Tabs() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
@@ -43,7 +55,6 @@ export default function Tabs() {
   const compact = width < 400;
   // Tres etroit : on masque les libelles (icones seules) plutot que de les tronquer.
   const showLabel = width >= 340;
-  const side = compact ? 8 : 16;
   const iconSize = compact ? (showLabel ? 19 : 22) : 21;
   const labelSize = compact ? 8.5 : 10;
 
@@ -54,24 +65,15 @@ export default function Tabs() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: '#6E7C90',
         tabBarShowLabel: showLabel,
+        // Barre ancree en bas : la navigation reserve l'espace, le contenu ne passe plus dessous.
         tabBarStyle: {
-          position: 'absolute',
-          left: side,
-          right: side,
-          bottom: Math.max(insets.bottom, 10),
-          height: 62,
-          borderRadius: 28,
+          height: 60 + insets.bottom,
           backgroundColor: '#161F2D',
-          borderWidth: 1,
-          borderColor: colors.border,
           borderTopWidth: 1,
-          paddingHorizontal: compact ? 3 : 8,
+          borderTopColor: colors.border,
+          paddingHorizontal: compact ? 4 : 10,
           paddingTop: 8,
-          paddingBottom: 8,
-          shadowColor: '#000',
-          shadowOpacity: 0.25,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 8 },
+          paddingBottom: insets.bottom + 6,
           elevation: 10,
         },
         tabBarItemStyle: {
@@ -80,7 +82,7 @@ export default function Tabs() {
           paddingHorizontal: 0,
         },
         tabBarActiveBackgroundColor: 'rgba(35,211,168,0.16)',
-        tabBarLabel: LABELS[route.name],
+        tabBarLabel: t('tabs.' + route.name),
         tabBarLabelStyle: {
           fontFamily: ff.semibold,
           fontSize: labelSize,

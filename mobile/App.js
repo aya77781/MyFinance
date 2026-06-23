@@ -16,6 +16,7 @@ import {
 import Tabs from './src/navigation/Tabs';
 import AuthScreen from './src/screens/AuthScreen';
 import { AuthProvider, useAuth } from './src/AuthContext';
+import { LanguageProvider } from './src/i18n';
 import { colors, ff } from './src/theme';
 
 // Sur le web : titre, theme et icones "Ajouter a l'ecran d'accueil" (PWA).
@@ -98,9 +99,11 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <Root />
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <Root />
+          </AuthProvider>
+        </LanguageProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

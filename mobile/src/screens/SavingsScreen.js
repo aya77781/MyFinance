@@ -12,8 +12,57 @@ import EmptyState from '../components/EmptyState';
 import { colors, spacing, font, radius, palette } from '../theme';
 import { euro } from '../format';
 import { Savings } from '../api';
+import { useT, registerTranslations } from '../i18n';
+
+registerTranslations({
+  fr: {
+    'savings.title': 'Epargne',
+    'savings.subtitle': 'Tes pochettes',
+    'savings.totalLabel': 'Total epargne',
+    'savings.pocketCount': '{count} pochette(s)',
+    'savings.emptyTitle': 'Aucune pochette',
+    'savings.emptyText': "Cree un objectif d'epargne pour commencer a mettre de cote.",
+    'savings.deleteTitle': 'Supprimer',
+    'savings.deleteConfirm': 'Supprimer "{name}" ?',
+    'savings.cancel': 'Annuler',
+    'savings.delete': 'Supprimer',
+    'savings.newPocket': 'Nouvelle pochette',
+    'savings.fieldName': 'Nom',
+    'savings.fieldNamePlaceholder': 'Ex : Vacances',
+    'savings.fieldTarget': 'Objectif',
+    'savings.fieldColor': 'Couleur',
+    'savings.addOn': 'Ajouter sur {name}',
+    'savings.fieldAmount': 'Montant (negatif pour retirer)',
+    'savings.fieldNote': 'Note',
+    'savings.fieldNotePlaceholder': 'Optionnel',
+    'savings.submitContribute': 'Valider',
+  },
+  en: {
+    'savings.title': 'Savings',
+    'savings.subtitle': 'Your pockets',
+    'savings.totalLabel': 'Total savings',
+    'savings.pocketCount': '{count} pocket(s)',
+    'savings.emptyTitle': 'No pockets',
+    'savings.emptyText': 'Create a savings goal to start setting money aside.',
+    'savings.deleteTitle': 'Delete',
+    'savings.deleteConfirm': 'Delete "{name}"?',
+    'savings.cancel': 'Cancel',
+    'savings.delete': 'Delete',
+    'savings.newPocket': 'New pocket',
+    'savings.fieldName': 'Name',
+    'savings.fieldNamePlaceholder': 'e.g. Holidays',
+    'savings.fieldTarget': 'Goal',
+    'savings.fieldColor': 'Color',
+    'savings.addOn': 'Add to {name}',
+    'savings.fieldAmount': 'Amount (negative to withdraw)',
+    'savings.fieldNote': 'Note',
+    'savings.fieldNotePlaceholder': 'Optional',
+    'savings.submitContribute': 'Confirm',
+  },
+});
 
 export default function SavingsScreen() {
+  const t = useT();
   const [items, setItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [createSheet, setCreateSheet] = useState(false);
@@ -55,10 +104,10 @@ export default function SavingsScreen() {
   };
 
   const confirmDelete = (item) => {
-    Alert.alert('Supprimer', `Supprimer "${item.name}" ?`, [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('savings.deleteTitle'), t('savings.deleteConfirm', { name: item.name }), [
+      { text: t('savings.cancel'), style: 'cancel' },
       {
-        text: 'Supprimer',
+        text: t('savings.delete'),
         style: 'destructive',
         onPress: async () => {
           await Savings.remove(item._id);
@@ -71,8 +120,8 @@ export default function SavingsScreen() {
   return (
     <>
       <Screen
-        title="Epargne"
-        subtitle="Tes pochettes"
+        title={t('savings.title')}
+        subtitle={t('savings.subtitle')}
         action={<AddButton onPress={() => setCreateSheet(true)} />}
         refreshing={refreshing}
         onRefresh={() => {
@@ -81,14 +130,14 @@ export default function SavingsScreen() {
         }}
       >
         <GradientCard style={{ marginBottom: spacing.lg }}>
-          <Text style={styles.totalLabel}>Total epargne</Text>
+          <Text style={styles.totalLabel}>{t('savings.totalLabel')}</Text>
           <Text style={styles.totalValue}>{euro(total)}</Text>
-          <Text style={styles.totalSub}>{items.length} pochette(s)</Text>
+          <Text style={styles.totalSub}>{t('savings.pocketCount', { count: items.length })}</Text>
         </GradientCard>
 
         {items.length === 0 ? (
           <Card>
-            <EmptyState title="Aucune pochette" text="Cree un objectif d'epargne pour commencer a mettre de cote." />
+            <EmptyState title={t('savings.emptyTitle')} text={t('savings.emptyText')} />
           </Card>
         ) : (
           items.map((item) => (
@@ -107,13 +156,13 @@ export default function SavingsScreen() {
 
       <FormSheet
         visible={createSheet}
-        title="Nouvelle pochette"
+        title={t('savings.newPocket')}
         fields={[
-          { key: 'name', label: 'Nom', type: 'text', placeholder: 'Ex : Vacances' },
-          { key: 'target', label: 'Objectif', type: 'number', placeholder: '0' },
+          { key: 'name', label: t('savings.fieldName'), type: 'text', placeholder: t('savings.fieldNamePlaceholder') },
+          { key: 'target', label: t('savings.fieldTarget'), type: 'number', placeholder: '0' },
           {
             key: 'color',
-            label: 'Couleur',
+            label: t('savings.fieldColor'),
             type: 'select',
             options: palette.map((c) => ({ label: ' ', value: c, color: c })),
           },
@@ -125,12 +174,12 @@ export default function SavingsScreen() {
 
       <FormSheet
         visible={!!contribTarget}
-        title={contribTarget ? `Ajouter sur ${contribTarget.name}` : ''}
+        title={contribTarget ? t('savings.addOn', { name: contribTarget.name }) : ''}
         fields={[
-          { key: 'amount', label: 'Montant (negatif pour retirer)', type: 'number', placeholder: '0' },
-          { key: 'note', label: 'Note', type: 'text', placeholder: 'Optionnel' },
+          { key: 'amount', label: t('savings.fieldAmount'), type: 'number', placeholder: '0' },
+          { key: 'note', label: t('savings.fieldNote'), type: 'text', placeholder: t('savings.fieldNotePlaceholder') },
         ]}
-        submitLabel="Valider"
+        submitLabel={t('savings.submitContribute')}
         onSubmit={contribute}
         onClose={() => setContribTarget(null)}
       />
