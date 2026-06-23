@@ -20,7 +20,9 @@ services:
       #   value: /data # a activer si tu ajoutes le disque persistant ci-dessus
       - key: JWT_SECRET
         generateValue: true # genere automatiquement
+      - key: SERPAPI_KEY
+        sync: false # a remplir dans le dashboard Render : cle serpapi.com (news, prioritaire)
       - key: GNEWS_API_TOKEN
-        sync: false # a remplir : cle gnews.io (optionnel)
+        sync: false # a remplir : cle gnews.io (repli, optionnel)
       - key: NODE_VERSION
         value: "22"
