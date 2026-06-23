@@ -142,6 +142,57 @@ export default function Glyph({ name, color = '#10131A', size = 22, strokeWidth 
           <Path d="M18 14 V19 a1 1 0 0 1-1 1 H6 a1 1 0 0 1-1-1 V8 a1 1 0 0 1 1-1 H11" />
         </G>
       );
+    case 'gift': // Cadeau
+      return V(
+        <G {...p}>
+          <Rect x="4" y="9" width="16" height="11" rx="1.5" />
+          <Path d="M3 9 H21" />
+          <Line x1="12" y1="9" x2="12" y2="20" />
+          <Path d="M12 9 C12 5.5 8.5 5 7.5 7 C6.8 8.4 9.5 9 12 9 C12 5.5 15.5 5 16.5 7 C17.2 8.4 14.5 9 12 9" />
+        </G>
+      );
+    case 'briefcase': // Salaire
+      return V(
+        <G {...p}>
+          <Rect x="3" y="8" width="18" height="11" rx="2" />
+          <Path d="M9 8 V6 a2 2 0 0 1 2-2 H13 a2 2 0 0 1 2 2 V8" />
+          <Line x1="3" y1="13" x2="21" y2="13" />
+        </G>
+      );
+    case 'sparkle': // Menage
+      return V(
+        <Path {...p} d="M12 4 L13.5 10.5 L20 12 L13.5 13.5 L12 20 L10.5 13.5 L4 12 L10.5 10.5 Z" />
+      );
+    case 'baby': // Babysitting
+      return V(
+        <G {...p}>
+          <Circle cx="12" cy="7" r="3" />
+          <Path d="M6 20 a6 6 0 0 1 12 0" />
+        </G>
+      );
+    case 'book': // Tutoring
+      return V(
+        <G {...p}>
+          <Path d="M4 5 a2 2 0 0 1 2-2 H12 V19 H6 a2 2 0 0 0-2 2 Z" />
+          <Path d="M20 5 a2 2 0 0 0-2-2 H12 V19 H18 a2 2 0 0 1 2 2 Z" />
+        </G>
+      );
+    case 'laptop': // Freelance
+      return V(
+        <G {...p}>
+          <Rect x="5" y="5" width="14" height="10" rx="1.5" />
+          <Path d="M3 19 H21 L20 16 H4 Z" />
+        </G>
+      );
+    case 'trophy': // Competition
+      return V(
+        <G {...p}>
+          <Path d="M8 4 H16 V9 a4 4 0 0 1-8 0 Z" />
+          <Path d="M8 5 H5 a3 3 0 0 0 3 3 M16 5 H19 a3 3 0 0 1-3 3" />
+          <Line x1="12" y1="13" x2="12" y2="16" />
+          <Path d="M9 20 H15 L14 16 H10 Z" />
+        </G>
+      );
     case 'tag':
     default:
       return V(
@@ -164,5 +215,12 @@ export function glyphForCategory(name = '') {
   if (/(sante|medecin|pharma|assur|mutuelle)/.test(n)) return 'heart';
   if (/(abonn|netflix|spotify|sub|telephone|internet)/.test(n)) return 'repeat';
   if (/(shopping|vetement|achat|mode)/.test(n)) return 'bag';
+  if (/(cadeau|gift|present)/.test(n)) return 'gift';
+  if (/(salaire|salary|paie|paye)/.test(n)) return 'briefcase';
+  if (/(menage|ménage|nettoyage|propre)/.test(n)) return 'sparkle';
+  if (/(babysit|garde|enfant)/.test(n)) return 'baby';
+  if (/(tutor|cours|soutien|prof)/.test(n)) return 'book';
+  if (/(freelance|mission|indep)/.test(n)) return 'laptop';
+  if (/(competition|compétition|concours|tournoi|prix)/.test(n)) return 'trophy';
   return 'tag';
 }

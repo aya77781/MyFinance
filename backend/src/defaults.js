@@ -9,4 +9,6 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Sante', color: '#14B8A6' },
   { name: 'Abonnements', color: '#8B5CF6' },
   { name: 'Shopping', color: '#F43F5E' },
+  { name: 'Repas', color: '#FB923C' },
+  { name: 'Cadeau', color: '#E879F9' },
 ];

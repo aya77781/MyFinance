@@ -71,6 +71,7 @@ export const Transactions = {
 export const Categories = {
   list: () => api.get('/categories'),
   create: (data) => api.post('/categories', data),
+  update: (id, data) => api.put(`/categories/${id}`, data),
   remove: (id) => api.del(`/categories/${id}`),
 };
 

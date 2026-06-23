@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { colors, radius, spacing, font, ff } from '../theme';
 import Button from './Button';
+import Glyph from './Glyph';
 
 // Formulaire modal generique pilote par une config de champs.
 // fields: [{ key, label, type: 'text'|'number'|'select', options?, placeholder }]
@@ -23,6 +24,7 @@ export default function FormSheet({
   submitLabel = 'Enregistrer',
   onSubmit,
   onClose,
+  onDelete,
 }) {
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -82,7 +84,15 @@ export default function FormSheet({
                               onPress={() => set(f.key, opt.value)}
                               style={[styles.option, active && styles.optionActive]}
                             >
-                              {opt.color ? (
+                              {opt.glyph ? (
+                                <View style={{ marginRight: 8 }}>
+                                  <Glyph
+                                    name={opt.glyph}
+                                    color={active ? colors.textOnTeal : opt.color || colors.text}
+                                    size={18}
+                                  />
+                                </View>
+                              ) : opt.color ? (
                                 <View style={[styles.optionDot, { backgroundColor: opt.color }]} />
                               ) : null}
                               <Text style={[styles.optionText, active && styles.optionTextActive]}>
@@ -112,6 +122,11 @@ export default function FormSheet({
             <View style={{ marginTop: spacing.md }}>
               <Button title={submitLabel} onPress={submit} loading={saving} />
             </View>
+            {onDelete ? (
+              <Pressable onPress={onDelete} hitSlop={8} style={styles.deleteBtn}>
+                <Text style={styles.deleteText}>Supprimer</Text>
+              </Pressable>
+            ) : null}
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -174,4 +189,6 @@ const styles = StyleSheet.create({
   optionText: { color: colors.text, fontFamily: ff.semibold },
   optionTextActive: { color: colors.textOnTeal },
   optionDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+  deleteBtn: { alignSelf: 'center', paddingVertical: spacing.md, marginTop: spacing.xs },
+  deleteText: { color: colors.negative, fontFamily: ff.bold, fontSize: 15 },
 });
