@@ -32,6 +32,11 @@ export const translations = {
     'common.loading': 'Chargement...',
     'account.language': 'Langue',
     'account.languageHint': "Choisis la langue de l'application.",
+    'account.photo': 'Photo de profil',
+    'account.addPhoto': 'Ajouter une photo',
+    'account.changePhoto': 'Changer la photo',
+    'account.removePhoto': 'Supprimer',
+    'account.permissionDenied': "Acces aux photos refuse. Autorise-le dans les reglages.",
   },
   en: {
     'common.save': 'Save',
@@ -45,6 +50,11 @@ export const translations = {
     'common.loading': 'Loading...',
     'account.language': 'Language',
     'account.languageHint': 'Choose the app language.',
+    'account.photo': 'Profile photo',
+    'account.addPhoto': 'Add a photo',
+    'account.changePhoto': 'Change photo',
+    'account.removePhoto': 'Remove',
+    'account.permissionDenied': 'Photo access denied. Enable it in settings.',
   },
 };
 

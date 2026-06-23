@@ -16,6 +16,7 @@ import {
 import Tabs from './src/navigation/Tabs';
 import AuthScreen from './src/screens/AuthScreen';
 import { AuthProvider, useAuth } from './src/AuthContext';
+import { ProfileProvider } from './src/ProfileContext';
 import { LanguageProvider } from './src/i18n';
 import { colors, ff } from './src/theme';
 
@@ -101,7 +102,9 @@ export default function App() {
       <SafeAreaProvider>
         <LanguageProvider>
           <AuthProvider>
-            <Root />
+            <ProfileProvider>
+              <Root />
+            </ProfileProvider>
           </AuthProvider>
         </LanguageProvider>
       </SafeAreaProvider>

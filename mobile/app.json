@@ -29,7 +29,13 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autorise l'acces a tes photos pour choisir une photo de profil."
+        }
+      ]
     ],
     "extra": {
       "eas": {

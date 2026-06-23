@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, Pressable, Alert, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, Alert, StyleSheet, ScrollView, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import Screen from '../components/Screen';
@@ -16,6 +16,7 @@ import { euro, getLocale } from '../format';
 import { Income, Charges, Categories, Transactions } from '../api';
 import Button from '../components/Button';
 import { useAuth } from '../AuthContext';
+import { useProfile } from '../ProfileContext';
 import { useT, registerTranslations, useLang, LANGUAGES } from '../i18n';
 
 registerTranslations({
@@ -180,7 +181,16 @@ registerTranslations({
 export default function BudgetScreen() {
   const t = useT();
   const { lang, setLang } = useLang();
+  const { photo, pickPhoto, removePhoto } = useProfile();
   const { user, logout } = useAuth();
+
+  const onPickPhoto = async () => {
+    const res = await pickPhoto();
+    if (!res.ok && res.reason === 'permission') {
+      Alert.alert(t('account.photo'), t('account.permissionDenied'));
+    }
+  };
+  const initial = ((user?.name || user?.email || '?').trim()[0] || '?').toUpperCase();
   const [income, setIncome] = useState([]);
   const [charges, setCharges] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -730,6 +740,34 @@ export default function BudgetScreen() {
           )}
         </Card>
 
+        {/* Photo de profil */}
+        <View style={styles.sectionHeader}>
+          <Text style={font.h2}>{t('account.photo')}</Text>
+        </View>
+        <Card>
+          <View style={styles.photoRow}>
+            <Pressable onPress={onPickPhoto} style={styles.photoAvatar}>
+              {photo ? (
+                <Image source={{ uri: photo }} style={styles.photoImg} />
+              ) : (
+                <Text style={styles.photoInitial}>{initial}</Text>
+              )}
+            </Pressable>
+            <View style={{ flex: 1, gap: spacing.sm }}>
+              <Pressable onPress={onPickPhoto} style={styles.photoBtn}>
+                <Text style={styles.photoBtnText}>
+                  {photo ? t('account.changePhoto') : t('account.addPhoto')}
+                </Text>
+              </Pressable>
+              {photo ? (
+                <Pressable onPress={removePhoto} hitSlop={6} style={styles.photoRemove}>
+                  <Text style={styles.photoRemoveText}>{t('account.removePhoto')}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        </Card>
+
         {/* Langue de l'application */}
         <View style={styles.sectionHeader}>
           <Text style={font.h2}>{t('account.language')}</Text>
@@ -956,6 +994,30 @@ const styles = StyleSheet.create({
   legLine: { width: 14, height: 2, borderRadius: 2, backgroundColor: '#FFFFFF' },
   legTxt: { color: colors.textMuted, fontFamily: ff.semibold, fontSize: 12 },
   hint: { ...font.caption, textAlign: 'center', marginTop: spacing.xl },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  photoAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  photoImg: { width: 64, height: 64, borderRadius: 32 },
+  photoInitial: { color: colors.text, fontFamily: ff.bold, fontSize: 24 },
+  photoBtn: {
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoBtnText: { color: colors.textOnTeal, fontFamily: ff.bold, fontSize: 14 },
+  photoRemove: { alignItems: 'center', paddingVertical: 4 },
+  photoRemoveText: { color: colors.negative, fontFamily: ff.semibold, fontSize: 13 },
   langRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   langBtn: {
     flex: 1,

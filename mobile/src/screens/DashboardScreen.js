@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Pressable, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +8,7 @@ import { colors, spacing, radius, font, ff, brandGradient } from '../theme';
 import { euro, monthLabel } from '../format';
 import { Dashboard } from '../api';
 import { useAuth } from '../AuthContext';
+import { useProfile } from '../ProfileContext';
 import Card from '../components/Card';
 import ActionTile from '../components/ActionTile';
 import DonutChart from '../components/DonutChart';
@@ -61,6 +62,7 @@ export default function DashboardScreen({ navigation }) {
   const t = useT();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { photo } = useProfile();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -136,7 +138,11 @@ export default function DashboardScreen({ navigation }) {
             style={({ pressed }) => [styles.avatar, pressed && { opacity: 0.7 }]}
             hitSlop={8}
           >
-            <Text style={styles.avatarText}>{initials}</Text>
+            {photo ? (
+              <Image source={{ uri: photo }} style={styles.avatarImg} />
+            ) : (
+              <Text style={styles.avatarText}>{initials}</Text>
+            )}
           </Pressable>
           <Pressable onPress={() => navigation.navigate('Budget')} style={styles.topBtn} hitSlop={8}>
             <View style={styles.topBtnDot} />
@@ -265,6 +271,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: '#fff', fontFamily: ff.bold, fontSize: 16 },
+  avatarImg: { width: 42, height: 42, borderRadius: 21 },
   topBtn: {
     width: 42,
     height: 42,
