@@ -1,3 +1,4 @@
+import { useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -36,38 +37,57 @@ const LABELS = {
 
 export default function Tabs() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+
+  // 7 onglets : on resserre tout sur petit ecran pour eviter les libelles tronques.
+  const compact = width < 400;
+  // Tres etroit : on masque les libelles (icones seules) plutot que de les tronquer.
+  const showLabel = width >= 340;
+  const side = compact ? 8 : 16;
+  const iconSize = compact ? (showLabel ? 19 : 22) : 21;
+  const labelSize = compact ? 8.5 : 10;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: '#6E7C90',
-        tabBarShowLabel: true,
+        tabBarShowLabel: showLabel,
         tabBarStyle: {
           position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: Math.max(insets.bottom, 12),
-          height: 64,
-          borderRadius: 32,
+          left: side,
+          right: side,
+          bottom: Math.max(insets.bottom, 10),
+          height: 62,
+          borderRadius: 28,
           backgroundColor: '#161F2D',
           borderWidth: 1,
           borderColor: colors.border,
           borderTopWidth: 1,
-          paddingHorizontal: 8,
-          paddingTop: 9,
-          paddingBottom: 9,
+          paddingHorizontal: compact ? 3 : 8,
+          paddingTop: 8,
+          paddingBottom: 8,
           shadowColor: '#000',
           shadowOpacity: 0.25,
           shadowRadius: 16,
           shadowOffset: { width: 0, height: 8 },
           elevation: 10,
         },
-        tabBarItemStyle: { borderRadius: 20, marginHorizontal: 2 },
+        tabBarItemStyle: {
+          borderRadius: 16,
+          marginHorizontal: compact ? 0 : 2,
+          paddingHorizontal: 0,
+        },
         tabBarActiveBackgroundColor: 'rgba(35,211,168,0.16)',
         tabBarLabel: LABELS[route.name],
-        tabBarLabelStyle: { fontFamily: ff.semibold, fontSize: 9.5, marginTop: -2 },
-        tabBarIcon: ({ color }) => <Glyph name={ICONS[route.name]} color={color} size={21} />,
+        tabBarLabelStyle: {
+          fontFamily: ff.semibold,
+          fontSize: labelSize,
+          letterSpacing: -0.2,
+          marginTop: -1,
+        },
+        tabBarIcon: ({ color }) => <Glyph name={ICONS[route.name]} color={color} size={iconSize} />,
       })}
     >
       <Tab.Screen name="Accueil" component={DashboardScreen} />
