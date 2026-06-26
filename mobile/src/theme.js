@@ -10,26 +10,27 @@ export const ff = {
 };
 
 export const colors = {
-  bg: '#0F1520',
-  bgSoft: '#1B2433',
-  surface: '#18202E',
+  bg: '#0A1628', // navy profond facon dashboard fintech
+  bgSoft: '#13294D',
+  surface: '#101F38',
 
   text: '#FFFFFF',
-  textMuted: '#8593A6',
+  textMuted: '#8294B0',
   textOnBrand: '#FFFFFF',
-  textOnBrandMuted: '#93A2B8',
+  textOnBrandMuted: '#94A3B8',
   textOnTeal: '#08221C', // texte sombre sur les surfaces teal
 
-  border: '#273141',
+  border: '#1C3257',
   primary: '#23D3A8',
   primarySoft: 'rgba(35,211,168,0.14)',
-  positive: '#23D3A8',
+  positive: '#22C55E',
   negative: '#FF5D73',
   warning: '#F7B84B',
+  track: '#13294D', // fond des jauges / anneaux
 };
 
 // Carte hero / en-tete : navy elegant (haut -> bas).
-export const brandGradient = ['#202D41', '#141C29'];
+export const brandGradient = ['#16294B', '#0A1628'];
 
 // Degrade teal de la marque (logo, boutons principaux).
 export const tealGradient = ['#43E3C4', '#15A98B'];

@@ -32,6 +32,7 @@ export default function FormSheet({
   onSubmit,
   onClose,
   onDelete,
+  deleteLabel,
 }) {
   const t = useT();
   const [values, setValues] = useState(initial);
@@ -137,7 +138,7 @@ export default function FormSheet({
             </View>
             {onDelete ? (
               <Pressable onPress={onDelete} hitSlop={8} style={styles.deleteBtn}>
-                <Text style={styles.deleteText}>{t('form.delete')}</Text>
+                <Text style={styles.deleteText}>{deleteLabel || t('form.delete')}</Text>
               </Pressable>
             ) : null}
           </View>

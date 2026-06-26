@@ -816,25 +816,48 @@ export default function BudgetScreen() {
 }
 
 // Barres des depenses par periode, defilables horizontalement (mobile).
+// Le montant s'affiche au survol (web) et au toucher (mobile) via une bulle.
 function ExpenseBars({ data }) {
   const H = 130;
   const max = Math.max(1, ...data.map((d) => Number(d.value) || 0));
+  const [active, setActive] = useState(null);
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.barsRow}
     >
-      {data.map((d, i) => (
-        <View key={i} style={styles.barCol}>
-          <View style={[styles.barArea, { height: H }]}>
-            <View
-              style={[styles.barFill, { height: Math.max(3, (Number(d.value || 0) / max) * H) }]}
-            />
-          </View>
-          <Text style={styles.barLabel} numberOfLines={1}>{d.label}</Text>
-        </View>
-      ))}
+      {data.map((d, i) => {
+        const value = Number(d.value || 0);
+        const isActive = active === i;
+        return (
+          <Pressable
+            key={i}
+            style={styles.barCol}
+            onPress={() => setActive((prev) => (prev === i ? null : i))}
+            onHoverIn={() => setActive(i)}
+            onHoverOut={() => setActive((prev) => (prev === i ? null : prev))}
+          >
+            <View style={[styles.barArea, { height: H }]}>
+              {isActive ? (
+                <View style={styles.barTip}>
+                  <Text style={styles.barTipText}>{euro(value)}</Text>
+                </View>
+              ) : null}
+              <View
+                style={[
+                  styles.barFill,
+                  { height: Math.max(3, (value / max) * H) },
+                  isActive && styles.barFillActive,
+                ]}
+              />
+            </View>
+            <Text style={[styles.barLabel, isActive && styles.barLabelActive]} numberOfLines={1}>
+              {d.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -977,11 +1000,26 @@ const styles = StyleSheet.create({
   toggleTextActive: { color: colors.textOnTeal },
   timeTotal: { fontFamily: 'Manrope_800ExtraBold', fontSize: 30, letterSpacing: -0.8, marginTop: 2, marginBottom: spacing.md },
   timeLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: spacing.md },
-  barsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 14, marginTop: spacing.sm, paddingHorizontal: 2 },
+  barsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 14, marginTop: spacing.xl, paddingHorizontal: 2 },
   barCol: { alignItems: 'center', width: 34 },
-  barArea: { width: 34, justifyContent: 'flex-end', alignItems: 'center' },
+  barArea: { width: 34, justifyContent: 'flex-end', alignItems: 'center', overflow: 'visible' },
   barFill: { width: 20, borderRadius: 6, backgroundColor: colors.negative },
+  barFillActive: { backgroundColor: colors.primary },
+  barTip: {
+    position: 'absolute',
+    top: -30,
+    alignSelf: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    zIndex: 10,
+  },
+  barTipText: { color: colors.text, fontFamily: ff.bold, fontSize: 12 },
   barLabel: { marginTop: 6, fontSize: 11, color: colors.textMuted, fontFamily: ff.semibold, textTransform: 'capitalize', textAlign: 'center', width: 34 },
+  barLabelActive: { color: colors.text },
   donutWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   donutTotal: { fontFamily: ff.extrabold, fontSize: 15, color: colors.text },
   donutLegend: { flex: 1, gap: 10 },

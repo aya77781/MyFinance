@@ -108,6 +108,10 @@ export const Challenges = {
   create: (data) => api.post('/challenges', data),
   update: (id, data) => api.put(`/challenges/${id}`, data),
   addEntry: (id, data) => api.post(`/challenges/${id}/entries`, data),
+  // Pistes / missions : montant estime puis montant reel apres validation.
+  addMission: (id, data) => api.post(`/challenges/${id}/missions`, data),
+  updateMission: (id, missionId, data) => api.put(`/challenges/${id}/missions/${missionId}`, data),
+  removeMission: (id, missionId) => api.del(`/challenges/${id}/missions/${missionId}`),
   remove: (id) => api.del(`/challenges/${id}`),
 };
 

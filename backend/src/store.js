@@ -24,7 +24,15 @@ const FROM_DB = { id: '_id', user_id: 'user', category_id: 'category' };
 
 // Champs numeriques : PostgREST renvoie les `numeric` sous forme de chaine pour
 // preserver la precision. On les reconvertit en nombres cote API.
-const NUMERIC_KEYS = new Set(['amount', 'targetAmount', 'currentAmount', 'result', 'planned']);
+const NUMERIC_KEYS = new Set([
+  'amount',
+  'targetAmount',
+  'currentAmount',
+  'result',
+  'planned',
+  'estimatedAmount',
+  'actualAmount',
+]);
 
 const camelToSnake = (s) => s.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase());
 const snakeToCamel = (s) => s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());

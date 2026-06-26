@@ -193,6 +193,10 @@ export default function Glyph({ name, color = '#10131A', size = 22, strokeWidth 
           <Path d="M9 20 H15 L14 16 H10 Z" />
         </G>
       );
+    case 'check': // Validation / mission terminee
+      return V(
+        <Polyline {...p} points="20 6 9 17 4 12" />
+      );
     case 'tag':
     default:
       return V(

@@ -11,6 +11,7 @@ import { useAuth } from '../AuthContext';
 import { useProfile } from '../ProfileContext';
 import Card from '../components/Card';
 import ActionTile from '../components/ActionTile';
+import GaugeRing from '../components/GaugeRing';
 import DonutChart from '../components/DonutChart';
 import CategoryIcon from '../components/CategoryIcon';
 import TransactionRow from '../components/TransactionRow';
@@ -22,6 +23,9 @@ registerTranslations({
     'dashboard.serverDown': 'Serveur injoignable',
     'dashboard.serverDownHint': 'Verifie que le backend tourne. ({error})',
     'dashboard.balanceLabel': 'Solde du mois · {month}',
+    'dashboard.netLabel': 'SOLDE NET',
+    'dashboard.savedRate': '{rate}% épargné',
+    'dashboard.overspent': 'Dépenses > entrées',
     'dashboard.add': 'Ajouter',
     'dashboard.savings': 'Epargne',
     'dashboard.challenges': 'Challenges',
@@ -41,6 +45,9 @@ registerTranslations({
     'dashboard.serverDown': 'Server unreachable',
     'dashboard.serverDownHint': 'Make sure the backend is running. ({error})',
     'dashboard.balanceLabel': 'Monthly balance · {month}',
+    'dashboard.netLabel': 'NET BALANCE',
+    'dashboard.savedRate': '{rate}% saved',
+    'dashboard.overspent': 'Spending > income',
     'dashboard.add': 'Add',
     'dashboard.savings': 'Savings',
     'dashboard.challenges': 'Challenges',
@@ -109,6 +116,13 @@ export default function DashboardScreen({ navigation }) {
   const totalExpenses = data.expensesByCategory.reduce((a, c) => a + c.total, 0);
   const initials = ((user?.name || user?.email || '?').trim()[0] || '?').toUpperCase();
 
+  // Jauge "solde net" : taux d'epargne = net / entrees (0..1).
+  const isPositive = s.net >= 0;
+  const tone = isPositive ? colors.positive : colors.negative;
+  const savedRate = s.realIncome > 0 ? Math.max(0, Math.min(1, s.net / s.realIncome)) : 0;
+  const gaugeProgress = isPositive ? Math.max(savedRate, 0.04) : 1;
+  const ratePct = Math.round(savedRate * 100);
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
@@ -151,8 +165,24 @@ export default function DashboardScreen({ navigation }) {
           </Pressable>
         </View>
 
-        <Text style={styles.balanceLabel}>{t('dashboard.balanceLabel', { month: monthLabel(year, month) })}</Text>
-        <Balance value={s.net} />
+        <View style={styles.gaugeWrap}>
+          <GaugeRing
+            progress={gaugeProgress}
+            size={236}
+            strokeWidth={20}
+            color={tone}
+            colorEnd={isPositive ? colors.primary : colors.negative}
+          >
+            <Text style={styles.gaugeLabel}>{t('dashboard.netLabel')}</Text>
+            <Balance value={s.net} tone={tone} />
+            <View style={[styles.gaugePill, { backgroundColor: isPositive ? colors.primarySoft : 'rgba(255,93,115,0.16)' }]}>
+              <Text style={[styles.gaugePillText, { color: tone }]}>
+                {isPositive ? t('dashboard.savedRate', { rate: ratePct }) : t('dashboard.overspent')}
+              </Text>
+            </View>
+          </GaugeRing>
+        </View>
+        <Text style={styles.gaugeMonth}>{t('dashboard.balanceLabel', { month: monthLabel(year, month) })}</Text>
 
         <View style={styles.actions}>
           <ActionTile glyph="plus" label={t('dashboard.add')} onBrand onPress={() => navigation.navigate('Transactions')} />
@@ -228,15 +258,16 @@ export default function DashboardScreen({ navigation }) {
 }
 
 // Solde : partie entiere grande, centimes plus petits (facon Revolut).
-function Balance({ value }) {
+// Affiche au centre de la jauge, colore selon le signe.
+function Balance({ value, tone = '#fff' }) {
   const formatted = euro(value, { sign: true }); // ex : "+1 234,56 €"
   const [intPart, decPart] = formatted.split(',');
   return (
     <View style={styles.balance}>
-      <Text style={styles.balanceInt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+      <Text style={[styles.balanceInt, { color: tone }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
         {intPart}
       </Text>
-      {decPart ? <Text style={styles.balanceDec}>,{decPart}</Text> : null}
+      {decPart ? <Text style={[styles.balanceDec, { color: tone }]}>,{decPart}</Text> : null}
     </View>
   );
 }
@@ -283,18 +314,33 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   topBtnDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#fff' },
-  balanceLabel: {
+  gaugeWrap: { alignItems: 'center', justifyContent: 'center', marginTop: spacing.xl },
+  gaugeLabel: {
+    color: colors.textOnBrandMuted,
+    fontFamily: ff.bold,
+    fontSize: 11.5,
+    letterSpacing: 3,
+    marginBottom: 4,
+  },
+  gaugePill: {
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+  },
+  gaugePillText: { fontFamily: ff.bold, fontSize: 12 },
+  gaugeMonth: {
     color: colors.textOnBrandMuted,
     fontFamily: ff.semibold,
     fontSize: 13,
     textAlign: 'center',
     textTransform: 'capitalize',
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
   },
-  balance: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', marginTop: 6 },
-  balanceInt: { ...font.hero, flexShrink: 1 },
-  balanceDec: { color: '#fff', fontFamily: ff.bold, fontSize: 24, marginTop: 6, opacity: 0.85 },
-  actions: { flexDirection: 'row', marginTop: spacing.xl, gap: spacing.sm },
+  balance: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center' },
+  balanceInt: { fontFamily: ff.extrabold, fontSize: 40, letterSpacing: -1.2, flexShrink: 1 },
+  balanceDec: { fontFamily: ff.bold, fontSize: 19, marginTop: 5, opacity: 0.9 },
+  actions: { flexDirection: 'row', marginTop: spacing.xxl, gap: spacing.sm },
   body: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
   flowRow: {
     flexDirection: 'row',
