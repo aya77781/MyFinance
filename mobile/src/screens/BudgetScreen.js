@@ -585,7 +585,9 @@ export default function BudgetScreen() {
         {/* Resume mensuel previsionnel */}
         <GradientCard>
           <Text style={styles.heroLabel}>{t('budget.remaining')}</Text>
-          <Text style={styles.heroValue}>{euro(dispo)}</Text>
+          <Text style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            {euro(dispo)}
+          </Text>
           <View style={styles.heroRow}>
             <Text style={styles.heroPos}>{t('budget.incomeSummary', { a: euro(totalIncome) })}</Text>
             <Text style={styles.heroNeg}>{t('budget.chargesSummary', { a: euro(totalCharges) })}</Text>
@@ -746,7 +748,12 @@ export default function BudgetScreen() {
         </View>
         <Card>
           <Text style={font.label}>{t('budget.cumulativeTotal')}</Text>
-          <Text style={[styles.timeTotal, { color: timeline.total < 0 ? colors.negative : colors.text }]}>
+          <Text
+            style={[styles.timeTotal, { color: timeline.total < 0 ? colors.negative : colors.text }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.6}
+          >
             {euro(timeline.total)}
           </Text>
           <View style={styles.timeLegend}>

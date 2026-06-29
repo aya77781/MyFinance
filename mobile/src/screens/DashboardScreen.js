@@ -301,9 +301,11 @@ function Flow({ label, value, tone }) {
   return (
     <View style={styles.flow}>
       <View style={[styles.flowDot, { backgroundColor: tone }]} />
-      <View>
-        <Text style={font.caption}>{label}</Text>
-        <Text style={styles.flowValue}>{value}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={font.caption} numberOfLines={1}>{label}</Text>
+        <Text style={styles.flowValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+          {value}
+        </Text>
       </View>
     </View>
   );
@@ -362,7 +364,10 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
     marginTop: spacing.lg,
   },
-  balance: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center' },
+  // maxWidth borne la ligne au diametre interne de l'anneau (236 - 2*strokeWidth) :
+  // sans largeur contrainte, adjustsFontSizeToFit ne reduit jamais la police et
+  // les gros montants debordent de la jauge.
+  balance: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', maxWidth: 188 },
   balanceInt: { fontFamily: ff.extrabold, fontSize: 40, letterSpacing: -1.2, flexShrink: 1 },
   balanceDec: { fontFamily: ff.bold, fontSize: 19, marginTop: 5, opacity: 0.9 },
   actions: { flexDirection: 'row', marginTop: spacing.xxl, gap: spacing.sm },

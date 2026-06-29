@@ -288,7 +288,12 @@ export default function OpportunitiesScreen() {
       >
         <GradientCard style={{ marginBottom: spacing.lg }}>
           <Text style={styles.bannerLabel}>{t('opportunities.bannerLabel')}</Text>
-          <Text style={[styles.bannerValue, { color: net < 0 ? colors.negative : '#fff' }]}>
+          <Text
+            style={[styles.bannerValue, { color: net < 0 ? colors.negative : '#fff' }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.6}
+          >
             {euro(net, { sign: net !== 0 })}
           </Text>
           <Text style={styles.bannerSub}>

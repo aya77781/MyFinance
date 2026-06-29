@@ -152,7 +152,9 @@ export default function SavingsScreen() {
       >
         <GradientCard style={{ marginBottom: spacing.lg }}>
           <Text style={styles.totalLabel}>{t('savings.totalLabel')}</Text>
-          <Text style={styles.totalValue}>{euro(total)}</Text>
+          <Text style={styles.totalValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            {euro(total)}
+          </Text>
           <Text style={styles.totalSub}>{t('savings.pocketCount', { count: items.length })}</Text>
         </GradientCard>
 

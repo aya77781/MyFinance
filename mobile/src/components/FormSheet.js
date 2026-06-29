@@ -11,6 +11,7 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, spacing, font, ff } from '../theme';
 import Button from './Button';
 import Glyph from './Glyph';
@@ -40,6 +41,7 @@ export default function FormSheet({
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
   const { height: winH } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   // Limite la zone scrollable a ~55% de l'ecran pour laisser place au clavier sur petits telephones.
   const fieldsMaxH = Math.min(420, Math.round(winH * 0.55));
 
@@ -74,7 +76,7 @@ export default function FormSheet({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.sheetWrap}
         >
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: Math.max(spacing.xxl, spacing.lg + insets.bottom) }]}>
             <View style={styles.handle} />
             <View style={styles.header}>
               <Text style={font.h2}>{title}</Text>
