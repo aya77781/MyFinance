@@ -17,6 +17,7 @@ import Tabs from './src/navigation/Tabs';
 import AuthScreen from './src/screens/AuthScreen';
 import { AuthProvider, useAuth } from './src/AuthContext';
 import { ProfileProvider } from './src/ProfileContext';
+import { ToastProvider } from './src/components/Toast';
 import { LanguageProvider } from './src/i18n';
 import { colors, ff } from './src/theme';
 
@@ -100,13 +101,15 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <ProfileProvider>
-              <Root />
-            </ProfileProvider>
-          </AuthProvider>
-        </LanguageProvider>
+        <ToastProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <ProfileProvider>
+                <Root />
+              </ProfileProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </ToastProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -9,6 +9,7 @@ import GoalCard from '../components/GoalCard';
 import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 import { colors, spacing, font, radius, palette } from '../theme';
 import { euro } from '../format';
 import { Savings } from '../api';
@@ -36,6 +37,10 @@ registerTranslations({
     'savings.fieldNote': 'Note',
     'savings.fieldNotePlaceholder': 'Optionnel',
     'savings.submitContribute': 'Valider',
+    'savings.nameRequired': 'Donne un nom a ta pochette.',
+    'savings.amountRequired': 'Saisis un montant.',
+    'savings.created': 'Pochette creee',
+    'savings.updated': 'Epargne mise a jour',
   },
   en: {
     'savings.title': 'Savings',
@@ -58,11 +63,16 @@ registerTranslations({
     'savings.fieldNote': 'Note',
     'savings.fieldNotePlaceholder': 'Optional',
     'savings.submitContribute': 'Confirm',
+    'savings.nameRequired': 'Give your pocket a name.',
+    'savings.amountRequired': 'Enter an amount.',
+    'savings.created': 'Pocket created',
+    'savings.updated': 'Savings updated',
   },
 });
 
 export default function SavingsScreen() {
   const t = useT();
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [createSheet, setCreateSheet] = useState(false);
@@ -72,11 +82,11 @@ export default function SavingsScreen() {
     try {
       setItems(await Savings.list());
     } catch (e) {
-      console.warn(e.message);
+      toast.error(e.message);
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [toast]);
 
   useFocusEffect(
     useCallback(() => {
@@ -86,19 +96,23 @@ export default function SavingsScreen() {
 
   const total = items.reduce((s, v) => s + v.currentAmount, 0);
 
+  // create / contribute passent par FormSheet : en cas d'erreur reseau,
+  // l'exception remonte et FormSheet l'affiche (toast) sans fermer la feuille.
   const create = async (v) => {
-    if (!v.name) return;
+    if (!v.name) throw new Error(t('savings.nameRequired'));
     await Savings.create({
       name: v.name,
       targetAmount: Number(v.target) || 0,
       color: v.color || palette[0],
     });
+    toast.success(t('savings.created'));
     load();
   };
 
   const contribute = async (v) => {
-    if (!v.amount) return;
+    if (!Number(v.amount)) throw new Error(t('savings.amountRequired'));
     await Savings.contribute(contribTarget._id, { amount: Number(v.amount), note: v.note || '' });
+    toast.success(t('savings.updated'));
     setContribTarget(null);
     load();
   };
@@ -110,8 +124,12 @@ export default function SavingsScreen() {
         text: t('savings.delete'),
         style: 'destructive',
         onPress: async () => {
-          await Savings.remove(item._id);
-          load();
+          try {
+            await Savings.remove(item._id);
+            load();
+          } catch (e) {
+            toast.error(e.message);
+          }
         },
       },
     ]);

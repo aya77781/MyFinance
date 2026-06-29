@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
 import AddButton from '../components/AddButton';
+import { useToast } from '../components/Toast';
 import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
@@ -38,6 +39,7 @@ registerTranslations({
     'opportunities.paidOn': ' · paye le {date}',
     'opportunities.deleteTitle': 'Supprimer',
     'opportunities.deleteConfirm': 'Supprimer "{title}" ?',
+    'opportunities.titleRequired': 'Donne un titre a cette opportunite.',
     'opportunities.cancel': 'Annuler',
     'opportunities.delete': 'Supprimer',
     'opportunities.newTitle': 'Nouvelle opportunite',
@@ -79,6 +81,7 @@ registerTranslations({
     'opportunities.paidOn': ' · paid on {date}',
     'opportunities.deleteTitle': 'Delete',
     'opportunities.deleteConfirm': 'Delete "{title}"?',
+    'opportunities.titleRequired': 'Give this opportunity a title.',
     'opportunities.cancel': 'Cancel',
     'opportunities.delete': 'Delete',
     'opportunities.newTitle': 'New opportunity',
@@ -125,6 +128,7 @@ const STATUS_OPTIONS = [
 
 export default function OpportunitiesScreen() {
   const t = useT();
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all');
@@ -135,11 +139,11 @@ export default function OpportunitiesScreen() {
     try {
       setItems(await Opportunities.list());
     } catch (e) {
-      console.warn(e.message);
+      toast.error(e.message);
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [toast]);
 
   useFocusEffect(
     useCallback(() => {
@@ -178,12 +182,13 @@ export default function OpportunitiesScreen() {
   };
 
   const create = async (v) => {
-    if (!v.title) return;
+    if (!v.title?.trim()) throw new Error(t('opportunities.titleRequired'));
     await Opportunities.create(buildPayload(v));
     load();
   };
 
   const saveEdit = async (v) => {
+    if (!v.title?.trim()) throw new Error(t('opportunities.titleRequired'));
     await Opportunities.update(editTarget._id, buildPayload(v));
     setEditTarget(null);
     load();
@@ -250,8 +255,12 @@ export default function OpportunitiesScreen() {
         text: t('opportunities.delete'),
         style: 'destructive',
         onPress: async () => {
-          await Opportunities.remove(item._id);
-          load();
+          try {
+            await Opportunities.remove(item._id);
+            load();
+          } catch (e) {
+            toast.error(e.message);
+          }
         },
       },
       ]

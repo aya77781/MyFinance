@@ -9,6 +9,7 @@ import ProgressBar from '../components/ProgressBar';
 import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 import Glyph from '../components/Glyph';
 import { colors, spacing, font, radius, palette, ff } from '../theme';
 import { euro } from '../format';
@@ -26,6 +27,7 @@ registerTranslations({
     'challenges.done': 'Objectif atteint',
     'challenges.deleteTitle': 'Supprimer',
     'challenges.deleteConfirm': 'Supprimer "{name}" ?',
+    'challenges.nameRequired': 'Donne un nom.',
     'challenges.cancel': 'Annuler',
     'challenges.delete': 'Supprimer',
     'challenges.createTitle': 'Nouveau challenge',
@@ -76,6 +78,7 @@ registerTranslations({
     'challenges.done': 'Target reached',
     'challenges.deleteTitle': 'Delete',
     'challenges.deleteConfirm': 'Delete "{name}"?',
+    'challenges.nameRequired': 'Enter a name.',
     'challenges.cancel': 'Cancel',
     'challenges.delete': 'Delete',
     'challenges.createTitle': 'New challenge',
@@ -140,6 +143,7 @@ function addPeriod(date, period) {
 
 export default function ChallengesScreen() {
   const t = useT();
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [createSheet, setCreateSheet] = useState(false);
@@ -150,11 +154,11 @@ export default function ChallengesScreen() {
     try {
       setItems(await Challenges.list());
     } catch (e) {
-      console.warn(e.message);
+      toast.error(e.message);
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [toast]);
 
   useFocusEffect(
     useCallback(() => {
@@ -163,7 +167,7 @@ export default function ChallengesScreen() {
   );
 
   const create = async (v) => {
-    if (!v.name) return;
+    if (!v.name?.trim()) throw new Error(t('challenges.nameRequired'));
     const period = v.period || '1m';
     await Challenges.create({
       title: v.name,
@@ -177,7 +181,8 @@ export default function ChallengesScreen() {
   };
 
   const addPiste = async (v) => {
-    if (!v.name || !pisteTarget) return;
+    if (!pisteTarget) return;
+    if (!v.name?.trim()) throw new Error(t('challenges.nameRequired'));
     await Challenges.addMission(pisteTarget._id, {
       title: v.name,
       estimatedAmount: Number(v.estimated) || 0,
@@ -200,17 +205,25 @@ export default function ChallengesScreen() {
   const reopenMission = async () => {
     if (!validateTarget) return;
     const { challenge, mission } = validateTarget;
-    await Challenges.updateMission(challenge._id, mission._id, { actualAmount: null, done: false });
-    setValidateTarget(null);
-    load();
+    try {
+      await Challenges.updateMission(challenge._id, mission._id, { actualAmount: null, done: false });
+      setValidateTarget(null);
+      load();
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
   const deleteMission = async () => {
     if (!validateTarget) return;
     const { challenge, mission } = validateTarget;
-    await Challenges.removeMission(challenge._id, mission._id);
-    setValidateTarget(null);
-    load();
+    try {
+      await Challenges.removeMission(challenge._id, mission._id);
+      setValidateTarget(null);
+      load();
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
   const confirmDelete = (item) => {
@@ -220,8 +233,12 @@ export default function ChallengesScreen() {
         text: t('challenges.delete'),
         style: 'destructive',
         onPress: async () => {
-          await Challenges.remove(item._id);
-          load();
+          try {
+            await Challenges.remove(item._id);
+            load();
+          } catch (e) {
+            toast.error(e.message);
+          }
         },
       },
     ]);

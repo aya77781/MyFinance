@@ -35,6 +35,11 @@ app.use('/api/opportunities', opportunities);
 app.use('/api/dashboard', dashboard);
 app.use('/api/market', market);
 
+// Route inconnue -> 404 JSON (au lieu du HTML par defaut d'Express).
+app.use((req, res) => {
+  res.status(404).json({ error: `Route introuvable : ${req.method} ${req.originalUrl}` });
+});
+
 // Gestion centralisee des erreurs.
 app.use((err, req, res, next) => {
   console.error(err);

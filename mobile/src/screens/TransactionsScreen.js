@@ -8,6 +8,7 @@ import AddButton from '../components/AddButton';
 import TransactionRow from '../components/TransactionRow';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 import { colors, spacing, font } from '../theme';
 import { Transactions, Categories } from '../api';
 import { glyphForCategory } from '../components/Glyph';
@@ -20,6 +21,9 @@ registerTranslations({
     'transactions.subtitle': 'Tes mouvements',
     'transactions.empty.title': 'Aucune transaction',
     'transactions.empty.text': 'Appuie sur + pour ajouter ta premiere depense ou revenu.',
+    'transactions.invalidAmount': 'Saisis un montant superieur a 0.',
+    'transactions.saved': 'Transaction ajoutee',
+    'transactions.updated': 'Transaction modifiee',
     'transactions.sheet.new': 'Nouvelle transaction',
     'transactions.sheet.edit': 'Modifier la transaction',
     'transactions.delete.title': 'Supprimer',
@@ -51,6 +55,9 @@ registerTranslations({
     'transactions.subtitle': 'Your activity',
     'transactions.empty.title': 'No transactions',
     'transactions.empty.text': 'Tap + to add your first expense or income.',
+    'transactions.invalidAmount': 'Enter an amount greater than 0.',
+    'transactions.saved': 'Transaction added',
+    'transactions.updated': 'Transaction updated',
     'transactions.sheet.new': 'New transaction',
     'transactions.sheet.edit': 'Edit transaction',
     'transactions.delete.title': 'Delete',
@@ -93,6 +100,7 @@ const INCOME_SOURCES = [
 
 export default function TransactionsScreen() {
   const t = useT();
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,11 +113,11 @@ export default function TransactionsScreen() {
       setItems(tx);
       setCategories(cats);
     } catch (e) {
-      console.warn(e.message);
+      toast.error(e.message);
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [toast]);
 
   useFocusEffect(
     useCallback(() => {
@@ -133,7 +141,10 @@ export default function TransactionsScreen() {
   };
 
   const save = async (v) => {
-    if (!v.amount) return;
+    if (!(Number(v.amount) > 0)) {
+      // throw -> FormSheet affiche l'erreur (toast) et garde la feuille ouverte.
+      throw new Error(t('transactions.invalidAmount'));
+    }
     const isIncome = v.type === 'income';
     // Pour un revenu, la "provenance" remplace la categorie de depense.
     const source = isIncome
@@ -151,8 +162,13 @@ export default function TransactionsScreen() {
     // Date saisie (JJ/MM/AAAA) -> ISO ; on garde l'ancienne si invalide/absente.
     const iso = parseDateInput(v.date);
     if (iso) payload.date = iso;
+    // En cas d'erreur reseau, on laisse l'exception remonter : FormSheet
+    // l'affiche (toast) et conserve la feuille ouverte. closeSheet est
+    // declenche par FormSheet apres succes.
     if (editing) await Transactions.update(editing._id, payload);
     else await Transactions.create(payload);
+    toast.success(editing ? t('transactions.updated') : t('transactions.saved'));
+    setEditing(null);
     load();
   };
 
@@ -163,9 +179,13 @@ export default function TransactionsScreen() {
         text: t('transactions.delete.confirm'),
         style: 'destructive',
         onPress: async () => {
-          await Transactions.remove(tx._id);
-          after?.();
-          load();
+          try {
+            await Transactions.remove(tx._id);
+            after?.();
+            load();
+          } catch (e) {
+            toast.error(e.message);
+          }
         },
       },
     ]);

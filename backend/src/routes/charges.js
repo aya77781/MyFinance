@@ -18,7 +18,9 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const item = await FixedCharge.insert({ ...req.body, user: req.userId });
+    // `active` par defaut a true : sans ca, une charge creee sans ce champ peut
+    // etre exclue des totaux cote app (qui filtre sur c.active).
+    const item = await FixedCharge.insert({ active: true, ...req.body, user: req.userId });
     res.status(201).json(await withCategory(item));
   } catch (e) {
     next(e);

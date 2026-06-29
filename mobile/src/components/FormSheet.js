@@ -14,6 +14,7 @@ import {
 import { colors, radius, spacing, font, ff } from '../theme';
 import Button from './Button';
 import Glyph from './Glyph';
+import { useToast } from './Toast';
 import { useT, registerTranslations } from '../i18n';
 
 registerTranslations({
@@ -35,6 +36,7 @@ export default function FormSheet({
   deleteLabel,
 }) {
   const t = useT();
+  const toast = useToast();
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
   const { height: winH } = useWindowDimensions();
@@ -57,8 +59,9 @@ export default function FormSheet({
       await onSubmit(values);
       onClose();
     } catch (e) {
-      // L'erreur est geree par l'ecran appelant si besoin.
-      console.warn(e.message);
+      // Erreur de validation (throw cote ecran) ou reseau : on la montre a
+      // l'utilisateur et on GARDE la feuille ouverte pour qu'il puisse corriger.
+      toast.error(e.message);
     } finally {
       setSaving(false);
     }

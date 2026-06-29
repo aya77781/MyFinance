@@ -11,6 +11,7 @@ import TimelineChart from '../components/TimelineChart';
 import DonutChart from '../components/DonutChart';
 import { glyphForCategory } from '../components/Glyph';
 import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/Toast';
 import { colors, spacing, font, radius, palette, ff } from '../theme';
 import { euro, getLocale } from '../format';
 import { Income, Charges, Categories, Transactions } from '../api';
@@ -34,6 +35,7 @@ registerTranslations({
     'budget.noCharges': 'Aucune charge',
     'budget.noChargesText': 'Ajoute ton loyer, tes abonnements...',
     'budget.monthExpenses': 'Depenses du mois',
+    'budget.backToCurrent': 'Revenir au mois courant',
     'budget.expenseCategories': 'Categories de depense',
     'budget.noCategory': 'Aucune categorie',
     'budget.noExpenseCatText': 'Cree des categories pour classer tes depenses.',
@@ -66,6 +68,8 @@ registerTranslations({
     'budget.planned': 'Prevu {a}',
     'budget.validate': 'Valider',
     'budget.cancel': 'Annuler',
+    'budget.errNameRequired': 'Donne un nom.',
+    'budget.errAmountRequired': 'Saisis un montant superieur a 0.',
     'budget.add': 'Ajouter',
     'budget.defaultNote': 'Budget {month}',
     // Sheets
@@ -112,6 +116,7 @@ registerTranslations({
     'budget.noCharges': 'No expenses',
     'budget.noChargesText': 'Add your rent, subscriptions...',
     'budget.monthExpenses': 'This month’s expenses',
+    'budget.backToCurrent': 'Back to current month',
     'budget.expenseCategories': 'Expense categories',
     'budget.noCategory': 'No category',
     'budget.noExpenseCatText': 'Create categories to sort your expenses.',
@@ -144,6 +149,8 @@ registerTranslations({
     'budget.planned': 'Planned {a}',
     'budget.validate': 'Confirm',
     'budget.cancel': 'Cancel',
+    'budget.errNameRequired': 'Enter a name.',
+    'budget.errAmountRequired': 'Enter an amount greater than 0.',
     'budget.add': 'Add',
     'budget.defaultNote': 'Budget {month}',
     // Sheets
@@ -180,6 +187,7 @@ registerTranslations({
 
 export default function BudgetScreen() {
   const t = useT();
+  const toast = useToast();
   const { lang, setLang } = useLang();
   const { photo, pickPhoto, removePhoto } = useProfile();
   const { user, logout } = useAuth();
@@ -200,11 +208,19 @@ export default function BudgetScreen() {
   const [editingCat, setEditingCat] = useState(null); // categorie en cours d'edition
   const [validating, setValidating] = useState(null); // categorie a valider ce mois
   const [timeMode, setTimeMode] = useState('month'); // 'month' | 'year'
+  const [monthOffset, setMonthOffset] = useState(0); // 0 = mois courant, +1 = mois prochain...
 
-  // Mois courant : cle technique (YYYY-MM) pour tagguer les validations + libelle.
+  // Mois affiche = mois courant decale de monthOffset (pour preparer les mois a venir).
+  // Cle technique (YYYY-MM) pour tagguer les validations + libelle lisible.
   const now = new Date();
-  const MONTH_KEY = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const MONTH_LABEL = now.toLocaleDateString(getLocale(), { month: 'long' });
+  const viewDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  const MONTH_KEY = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
+  const MONTH_LABEL = viewDate.toLocaleDateString(getLocale(), { month: 'long' });
+  // On ajoute l'annee au libelle quand on n'est pas sur l'annee en cours, pour lever l'ambiguite.
+  const MONTH_LABEL_FULL =
+    viewDate.getFullYear() === now.getFullYear()
+      ? MONTH_LABEL
+      : `${MONTH_LABEL} ${viewDate.getFullYear()}`;
 
   const load = useCallback(async () => {
     try {
@@ -219,11 +235,11 @@ export default function BudgetScreen() {
       setCategories(cat);
       setTransactions(tx);
     } catch (e) {
-      console.warn(e.message);
+      toast.error(e.message);
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [toast]);
 
   useFocusEffect(
     useCallback(() => {
@@ -247,8 +263,9 @@ export default function BudgetScreen() {
     if (t.budgetMonth === MONTH_KEY && cid) paidByCat.set(cid, t);
   }
 
-  const totalIncome = income.reduce((s, i) => (i.active ? s + i.amount : s), 0);
-  const totalCharges = charges.reduce((s, c) => (c.active ? s + c.amount : s), 0);
+  // active !== false : un enregistrement sans le champ (legacy) est compte actif.
+  const totalIncome = income.reduce((s, i) => (i.active !== false ? s + i.amount : s), 0);
+  const totalCharges = charges.reduce((s, c) => (c.active !== false ? s + c.amount : s), 0);
   const dispo = totalIncome - totalCharges - totalPlanned;
 
   // --- Suivi dans le temps : net par periode + cumul (config stable projetee). ---
@@ -364,6 +381,12 @@ export default function BudgetScreen() {
   };
 
   const submit = async (v) => {
+    // Validations (throw -> FormSheet affiche le toast et garde la feuille ouverte).
+    const needsName = ['income', 'charge', 'category', 'incomeCategory'].includes(sheet);
+    if (needsName && !v.name?.trim()) throw new Error(t('budget.errNameRequired'));
+    if ((sheet === 'income' || sheet === 'charge') && !(Number(v.amount) > 0)) {
+      throw new Error(t('budget.errAmountRequired'));
+    }
     if (sheet === 'income') {
       await Income.create({
         name: v.name,
@@ -399,7 +422,7 @@ export default function BudgetScreen() {
         category: validating._id,
         amount: Number(v.amount) || Number(validating.planned),
         budgetMonth: MONTH_KEY,
-        note: v.note || t('budget.defaultNote', { month: MONTH_LABEL }),
+        note: v.note || t('budget.defaultNote', { month: MONTH_LABEL_FULL }),
       });
     }
     load();
@@ -412,11 +435,15 @@ export default function BudgetScreen() {
         text: t('budget.alert.deleteTitle'),
         style: 'destructive',
         onPress: async () => {
-          if (kind === 'income') await Income.remove(item._id);
-          if (kind === 'charge') await Charges.remove(item._id);
-          if (kind === 'category') await Categories.remove(item._id);
-          after?.();
-          load();
+          try {
+            if (kind === 'income') await Income.remove(item._id);
+            if (kind === 'charge') await Charges.remove(item._id);
+            if (kind === 'category') await Categories.remove(item._id);
+            after?.();
+            load();
+          } catch (e) {
+            toast.error(e.message);
+          }
         },
       },
     ]);
@@ -430,8 +457,12 @@ export default function BudgetScreen() {
         text: t('budget.alert.cancelExpense'),
         style: 'destructive',
         onPress: async () => {
-          await Transactions.remove(tx._id);
-          load();
+          try {
+            await Transactions.remove(tx._id);
+            load();
+          } catch (e) {
+            toast.error(e.message);
+          }
         },
       },
     ]);
@@ -603,8 +634,29 @@ export default function BudgetScreen() {
           <>
             <View style={styles.sectionHeader}>
               <Text style={font.h2}>{t('budget.monthExpenses')}</Text>
-              <Text style={styles.monthLabel}>{MONTH_LABEL}</Text>
+              <View style={styles.monthNav}>
+                <Pressable
+                  onPress={() => setMonthOffset((o) => o - 1)}
+                  hitSlop={8}
+                  style={styles.monthNavBtn}
+                >
+                  <Text style={styles.monthNavArrow}>‹</Text>
+                </Pressable>
+                <Text style={styles.monthNavLabel}>{MONTH_LABEL_FULL}</Text>
+                <Pressable
+                  onPress={() => setMonthOffset((o) => o + 1)}
+                  hitSlop={8}
+                  style={styles.monthNavBtn}
+                >
+                  <Text style={styles.monthNavArrow}>›</Text>
+                </Pressable>
+              </View>
             </View>
+            {monthOffset !== 0 ? (
+              <Pressable onPress={() => setMonthOffset(0)} hitSlop={6} style={styles.monthReset}>
+                <Text style={styles.monthResetText}>{t('budget.backToCurrent')}</Text>
+              </Pressable>
+            ) : null}
             <Card padded={false} style={styles.listCard}>
               {budgetCats.map((c, idx) => (
                 <BudgetRow
@@ -964,6 +1016,27 @@ const styles = StyleSheet.create({
   },
   add: { color: colors.primary, fontWeight: '700', fontSize: 14 },
   monthLabel: { ...font.label, textTransform: 'capitalize', color: colors.textMuted },
+  monthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.bgSoft,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 4,
+  },
+  monthNavBtn: { width: 28, height: 28, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  monthNavArrow: { color: colors.primary, fontSize: 20, fontWeight: '800', lineHeight: 22 },
+  monthNavLabel: {
+    ...font.label,
+    textTransform: 'capitalize',
+    color: colors.text,
+    minWidth: 80,
+    textAlign: 'center',
+  },
+  monthReset: { alignSelf: 'flex-end', marginTop: -spacing.sm, marginBottom: spacing.sm },
+  monthResetText: { color: colors.primary, fontFamily: ff.semibold, fontSize: 12 },
   listCard: { paddingHorizontal: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md },
   amount: { fontSize: 16, fontWeight: '700', color: colors.text },

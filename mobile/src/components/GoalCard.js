@@ -3,9 +3,16 @@ import Card from './Card';
 import ProgressBar from './ProgressBar';
 import { colors, spacing, font, radius, ff } from '../theme';
 import { euro } from '../format';
+import { useT, registerTranslations } from '../i18n';
+
+registerTranslations({
+  fr: { 'goalCard.add': 'Ajouter', 'goalCard.reached': '{pct}% atteint' },
+  en: { 'goalCard.add': 'Add', 'goalCard.reached': '{pct}% reached' },
+});
 
 // Carte d'objectif (epargne ou challenge) avec progression.
 export default function GoalCard({ title, subtitle, current, target, color, onAdd, onLongPress }) {
+  const t = useT();
   const progress = target > 0 ? current / target : 0;
   const pct = Math.round(progress * 100);
   return (
@@ -23,7 +30,7 @@ export default function GoalCard({ title, subtitle, current, target, color, onAd
             onPress={onAdd}
             style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]}
           >
-            <Text style={styles.addText}>Ajouter</Text>
+            <Text style={styles.addText}>{t('goalCard.add')}</Text>
           </Pressable>
         </View>
 
@@ -35,7 +42,7 @@ export default function GoalCard({ title, subtitle, current, target, color, onAd
         {target > 0 ? (
           <>
             <ProgressBar progress={progress} color={color} />
-            <Text style={styles.pct}>{pct}% atteint</Text>
+            <Text style={styles.pct}>{t('goalCard.reached', { pct })}</Text>
           </>
         ) : null}
       </Card>

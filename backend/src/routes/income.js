@@ -17,7 +17,9 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const item = await Income.insert({ ...req.body, user: req.userId });
+    // `active` par defaut a true : sans ca, un revenu cree sans ce champ peut
+    // etre exclu des totaux cote app (qui filtre sur i.active).
+    const item = await Income.insert({ active: true, ...req.body, user: req.userId });
     res.status(201).json(item);
   } catch (e) {
     next(e);
