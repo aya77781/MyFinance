@@ -8,6 +8,7 @@ import AddButton from '../components/AddButton';
 import TransactionRow from '../components/TransactionRow';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
+import { SkeletonRow } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { colors, spacing, font } from '../theme';
 import { Transactions, Categories } from '../api';
@@ -103,6 +104,7 @@ export default function TransactionsScreen() {
   const toast = useToast();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [loaded, setLoaded] = useState(false); // evite le flash d'etat vide au 1er chargement
   const [refreshing, setRefreshing] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [editing, setEditing] = useState(null); // transaction en cours d'edition
@@ -115,6 +117,7 @@ export default function TransactionsScreen() {
     } catch (e) {
       toast.error(e.message);
     } finally {
+      setLoaded(true);
       setRefreshing(false);
     }
   }, [toast]);
@@ -290,7 +293,18 @@ export default function TransactionsScreen() {
           load();
         }}
       >
-        {items.length === 0 ? (
+        {!loaded && items.length === 0 ? (
+          <Card padded={false} style={{ paddingHorizontal: spacing.lg }}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <View
+                key={i}
+                style={i < 4 ? { borderBottomWidth: 1, borderBottomColor: colors.border } : null}
+              >
+                <SkeletonRow />
+              </View>
+            ))}
+          </Card>
+        ) : items.length === 0 ? (
           <Card>
             <EmptyState title={t('transactions.empty.title')} text={t('transactions.empty.text')} />
           </Card>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable, Alert, StyleSheet, ScrollView, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -257,11 +257,16 @@ export default function BudgetScreen() {
   const totalPlanned = budgetCats.reduce((s, c) => s + Number(c.planned), 0);
 
   // Validations du mois courant : categorie -> transaction (taguee budget_month).
-  const paidByCat = new Map();
-  for (const t of transactions) {
-    const cid = t.category?._id || t.category;
-    if (t.budgetMonth === MONTH_KEY && cid) paidByCat.set(cid, t);
-  }
+  // Memoise : ne se recalcule que si les transactions ou le mois affiche changent
+  // (et non a chaque frappe dans une feuille de saisie).
+  const paidByCat = useMemo(() => {
+    const m = new Map();
+    for (const t of transactions) {
+      const cid = t.category?._id || t.category;
+      if (t.budgetMonth === MONTH_KEY && cid) m.set(cid, t);
+    }
+    return m;
+  }, [transactions, MONTH_KEY]);
 
   // active !== false : un enregistrement sans le champ (legacy) est compte actif.
   const totalIncome = income.reduce((s, i) => (i.active !== false ? s + i.amount : s), 0);
@@ -269,7 +274,9 @@ export default function BudgetScreen() {
   const dispo = totalIncome - totalCharges - totalPlanned;
 
   // --- Suivi dans le temps : net par periode + cumul (config stable projetee). ---
-  const timeline = (() => {
+  // Boucles imbriquees sur l'historique complet : memoise pour eviter de rejouer
+  // l'agregation a chaque re-render (frappe clavier, ouverture de feuille...).
+  const timeline = useMemo(() => {
     const curY = now.getFullYear();
     const curM = now.getMonth();
     // Premier mois avec un mouvement (sinon mois courant).
@@ -339,12 +346,14 @@ export default function BudgetScreen() {
         cumulative: e.cumulative,
       })),
     };
-  })();
+    // now (date du jour) est volontairement hors deps : sa valeur est stable a la
+    // journee et seules les transactions/totaux changent reellement la courbe.
+  }, [transactions, totalIncome, totalCharges]);
   const timeData = timeMode === 'year' ? timeline.year : timeline.month;
   const expenseBars = timeData.map((d) => ({ label: d.label, value: d.expense }));
 
   // Repartition des depenses mensuelles par categorie (charges fixes + budgets prevus).
-  const expenseBreakdown = (() => {
+  const expenseBreakdown = useMemo(() => {
     const map = new Map();
     const add = (name, amount, color) => {
       if (!amount) return;
@@ -360,7 +369,8 @@ export default function BudgetScreen() {
     const list = [...map.values()].sort((a, b) => b.total - a.total);
     // Couleur de repli (palette) pour les entrees sans couleur de categorie.
     return list.map((e, i) => ({ ...e, color: e.color || palette[i % palette.length] }));
-  })();
+    // budgetCats derive de categories : depend de [charges, categories].
+  }, [charges, categories]);
   const expenseTotal = expenseBreakdown.reduce((s, e) => s + e.total, 0);
   const donutExpense = expenseBreakdown.map((e) => ({ value: e.total, color: e.color }));
 

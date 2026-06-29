@@ -165,16 +165,16 @@ P5 — Code quality (refacto, types TS, commentaires)
 
 ### État général
 - [ ] Auth (login / register) : **fonctionnel**
-- [ ] Dashboard : **fonctionnel** — graphiques présents
-- [ ] Transactions : **fonctionnel** — ajout/suppression OK
-- [ ] Budget : **partiel** — à compléter
-- [ ] Épargne : **partiel** — à compléter
-- [ ] Challenges : **en cours**
-- [ ] Marché : **en cours** — GNews intégré
+- [ ] Dashboard : **fonctionnel** — graphiques présents + skeleton de chargement
+- [ ] Transactions : **fonctionnel** — ajout/suppression OK + skeleton
+- [ ] Budget : **partiel** — à compléter (dérivés mémoïsés)
+- [ ] Épargne : **partiel** — à compléter + skeleton
+- [ ] Challenges : **en cours** + skeleton
+- [ ] Marché : **en cours** — GNews intégré, erreur réseau désormais visible
 
 ### Dettes techniques connues
-- ~~Pas de gestion d'erreur réseau sur tous les écrans~~ → **traité** : toasts globaux (`components/Toast.js`) + FormSheet affiche les erreurs de soumission. Reste à étendre aux mutations Challenges/Budget (charges/income) qui passent par Alert.
-- Pas de loading skeleton (juste un spinner basique)
+- ~~Pas de gestion d'erreur réseau sur tous les écrans~~ → **traité** : toasts globaux (`components/Toast.js`) + FormSheet affiche les erreurs de soumission. Mutations Challenges/Budget hors-FormSheet aussi couvertes (toasts).
+- ~~Pas de loading skeleton (juste un spinner basique)~~ → **traité** : `components/Skeleton.js` réutilisable, appliqué à Dashboard, Market, Transactions, Savings, Challenges.
 - Pas de pull-to-refresh sur toutes les listes
 - Pas de feedback haptic sur les actions importantes
 - Données /tmp éphémères → pas de persistance réelle en prod
@@ -196,6 +196,11 @@ P5 — Code quality (refacto, types TS, commentaires)
 | 2026-06-29 | screens/Transactions, Savings | **P4** Feedback de succes gratifiant (toast.success) apres ajout/modif de transaction et creation/contribution d'epargne. Aligne avec la vision "feedback visuel". |
 
 | 2026-06-29 | screens/Challenges, Budget | **P1** Gestion d'erreur (toast) sur toutes les mutations hors-FormSheet (suppressions, reopen/delete mission, annulation de validation). Validations nom/montant converties en `throw` traduit. |
+| 2026-06-29 | components/Skeleton.js (nouveau) | **P4** Composant de chargement reutilisable : `Skeleton` (bloc pulse anime), `SkeletonCard`, `SkeletonRow`. 100% JS (`Animated`), aucune dep native. Remplace le spinner basique par un apercu de la mise en page. |
+| 2026-06-29 | screens/DashboardScreen.js | **P4/P1** Etat de chargement : maquette squelette (en-tete degrade + jauge + actions + cartes) au lieu du `ActivityIndicator` plein ecran. Import `ActivityIndicator` retire (P5). |
+| 2026-06-29 | screens/MarketScreen.js | **P2** Echec reseau des actus desormais distingue d'une absence reelle (`news.error` -> message "indisponibles / tirer pour reessayer", cles i18n FR+EN ajoutees). Spinner -> cartes squelette. Import `ActivityIndicator` retire. |
+| 2026-06-29 | screens/BudgetScreen.js | **P3** `timeline` (boucles imbriquees sur tout l'historique), `expenseBreakdown` et `paidByCat` passes en `useMemo` : plus de recalcul a chaque re-render (frappe clavier / ouverture de feuille). |
+| 2026-06-29 | screens/Transactions, Savings, Challenges | **P1/P4** Flag `loaded` : maquette squelette au 1er chargement au lieu du flash d'etat vide ("Aucune transaction"...) avant l'arrivee des donnees. |
 
 **Verifie cette session (sante P0)** : backend boote, Supabase connecte et sain (login bidon -> 401 propre = table users interrogeable), 404/401 OK. Tous les fichiers JSX touches passent `@babel/parser`.
 
@@ -285,4 +290,24 @@ cd mobile && npx expo doctor
 - `expo-haptics` non installé → feedback haptique reporté (éviter d'ajouter une dep native en session courte sans rebuild).
 - Le `.env` backend pointe un projet Supabase (`nwnjturkfvknbtawtjvo`) non accessible via le MCP Supabase de la session → introspection schéma impossible ; santé vérifiée via l'API à la place.
 
-*Dernière mise à jour : 2026-06-29 (session autonome)*
+### Session du 2026-06-29 (autonome #2 ~1h)
+
+**Fait** — Thème : qualité du chargement (skeletons), performance Budget, transparence des erreurs Marché.
+- **P4** Composant `Skeleton` réutilisable (`Skeleton` / `SkeletonCard` / `SkeletonRow`), 100 % JS via `Animated`, aucune dep native.
+- **P4/P1** Skeletons de chargement sur Dashboard (maquette fidèle hero+jauge+actions+cartes) et Market (cartes d'actus).
+- **P1/P4** Transactions, Savings, Challenges : flag `loaded` → fini le flash d'état vide avant l'arrivée des données (skeleton à la place).
+- **P3** Budget : `timeline` (boucles imbriquées sur tout l'historique), `expenseBreakdown`, `paidByCat` mémoïsés (`useMemo`) → plus de recalcul à chaque frappe/ouverture de feuille.
+- **P2** Market : un échec réseau d'actus n'est plus confondu avec "aucune actu" — message dédié "indisponibles / tirer pour réessayer" (i18n FR+EN).
+- **P5** Imports `ActivityIndicator` morts retirés (Dashboard, Market).
+
+**Reste à faire (prochaine session)**
+- P4 : feedback haptique (toujours bloqué — `expo-haptics` non installé).
+- P3 : Budget/Transactions chargent encore tout l'historique (`?limit=500/200`) ; envisager agrégation server-side du timeline (route dashboard expose déjà des totaux mensuels).
+- P2 : étendre le pattern erreur-vs-vide (Market) aux autres listes si l'API tombe (actuellement toast + liste vide).
+- P5 : extraire le bloc "Compte / Photo / Langue" de BudgetScreen vers un écran Réglages dédié (BudgetScreen fait 1150+ lignes).
+
+**Blocages techniques notés** (inchangés)
+- `expo-haptics` non installé → feedback haptique reporté.
+- Projet Supabase du `.env` non introspectable via le MCP de la session ; santé vérifiée via l'API (login → 401 propre).
+
+*Dernière mise à jour : 2026-06-29 (session autonome #2)*

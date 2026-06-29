@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import Screen from '../components/Screen';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
+import { Skeleton } from '../components/Skeleton';
 import Glyph from '../components/Glyph';
 import { colors, spacing, font, radius, ff } from '../theme';
 import { Market } from '../api';
@@ -22,6 +23,8 @@ registerTranslations({
       'Ajoute une cle GNews gratuite (GNEWS_API_TOKEN) dans le backend pour afficher les news.',
     'market.news.empty.title': 'Aucune actualite',
     'market.news.empty.text': 'Reessaie plus tard ou change de region.',
+    'market.news.error.title': 'Actualites indisponibles',
+    'market.news.error.text': 'Connexion au service impossible. Tire vers le bas pour reessayer.',
     'market.opps.empty.title': 'Aucune opportunite',
     'market.opps.empty.text': "Change de region pour voir d'autres idees.",
     'market.opps.risk': 'Risque {risk}',
@@ -39,6 +42,8 @@ registerTranslations({
       'Add a free GNews key (GNEWS_API_TOKEN) in the backend to display the news.',
     'market.news.empty.title': 'No news',
     'market.news.empty.text': 'Try again later or change region.',
+    'market.news.error.title': 'News unavailable',
+    'market.news.error.text': 'Could not reach the service. Pull down to retry.',
     'market.opps.empty.title': 'No opportunity',
     'market.opps.empty.text': 'Change region to see other ideas.',
     'market.opps.risk': '{risk} risk',
@@ -138,7 +143,17 @@ export default function MarketScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xxl }} />
+        <View style={{ gap: spacing.md }}>
+          {[0, 1, 2].map((i) => (
+            <Card key={i}>
+              <Skeleton width="40%" height={12} r={5} />
+              <View style={{ height: spacing.sm }} />
+              <Skeleton width="90%" height={16} r={6} />
+              <View style={{ height: 6 }} />
+              <Skeleton width="70%" height={16} r={6} />
+            </Card>
+          ))}
+        </View>
       ) : tab === 'news' ? (
         <NewsList news={news} />
       ) : (
@@ -162,9 +177,14 @@ function NewsList({ news }) {
   }
   const articles = news?.articles || [];
   if (articles.length === 0) {
+    // Distingue l'echec reseau (fallback) d'une absence reelle d'actus.
+    const isError = !!news?.error;
     return (
       <Card>
-        <EmptyState title={t('market.news.empty.title')} text={t('market.news.empty.text')} />
+        <EmptyState
+          title={t(isError ? 'market.news.error.title' : 'market.news.empty.title')}
+          text={t(isError ? 'market.news.error.text' : 'market.news.empty.text')}
+        />
       </Card>
     );
   }

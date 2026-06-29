@@ -9,6 +9,7 @@ import ProgressBar from '../components/ProgressBar';
 import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
+import { SkeletonCard } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import Glyph from '../components/Glyph';
 import { colors, spacing, font, radius, palette, ff } from '../theme';
@@ -145,6 +146,7 @@ export default function ChallengesScreen() {
   const t = useT();
   const toast = useToast();
   const [items, setItems] = useState([]);
+  const [loaded, setLoaded] = useState(false); // evite le flash d'etat vide au 1er chargement
   const [refreshing, setRefreshing] = useState(false);
   const [createSheet, setCreateSheet] = useState(false);
   const [pisteTarget, setPisteTarget] = useState(null); // challenge auquel on ajoute une piste
@@ -156,6 +158,7 @@ export default function ChallengesScreen() {
     } catch (e) {
       toast.error(e.message);
     } finally {
+      setLoaded(true);
       setRefreshing(false);
     }
   }, [toast]);
@@ -272,7 +275,12 @@ export default function ChallengesScreen() {
           </Text>
         </GradientCard>
 
-        {items.length === 0 ? (
+        {!loaded && items.length === 0 ? (
+          <View style={{ gap: spacing.lg }}>
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={2} />
+          </View>
+        ) : items.length === 0 ? (
           <Card>
             <EmptyState title={t('challenges.emptyTitle')} text={t('challenges.emptyText')} />
           </Card>

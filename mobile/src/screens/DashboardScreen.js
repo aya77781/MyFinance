@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, RefreshControl, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +16,7 @@ import DonutChart from '../components/DonutChart';
 import CategoryIcon from '../components/CategoryIcon';
 import TransactionRow from '../components/TransactionRow';
 import EmptyState from '../components/EmptyState';
+import { Skeleton } from '../components/Skeleton';
 import { useT, registerTranslations } from '../i18n';
 
 registerTranslations({
@@ -95,8 +96,32 @@ export default function DashboardScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <LinearGradient
+          colors={brandGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={[styles.header, { paddingTop: insets.top + spacing.md }]}
+        >
+          <View style={styles.topbar}>
+            <Skeleton width={44} height={44} r={radius.full} />
+            <Skeleton width={36} height={20} r={10} />
+          </View>
+          <View style={[styles.gaugeWrap, { alignItems: 'center' }]}>
+            <Skeleton width={236} height={236} r={radius.full} />
+          </View>
+          <View style={{ alignItems: 'center', marginTop: spacing.md }}>
+            <Skeleton width={160} height={14} r={6} />
+          </View>
+          <View style={[styles.actions, { marginTop: spacing.xl }]}>
+            <Skeleton width="48%" height={64} r={radius.md} />
+            <Skeleton width="48%" height={64} r={radius.md} />
+          </View>
+        </LinearGradient>
+        <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.xl, gap: spacing.lg }}>
+          <Skeleton width="100%" height={150} r={radius.lg} />
+          <Skeleton width="100%" height={110} r={radius.lg} />
+        </View>
       </View>
     );
   }
