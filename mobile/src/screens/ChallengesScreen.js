@@ -33,6 +33,7 @@ registerTranslations({
     'challenges.noPeriod': 'Sans echeance',
     'challenges.edit': 'Modifier',
     'challenges.editTitle': 'Modifier le challenge',
+    'challenges.fieldCurrent': 'Montant actuel',
     'challenges.created': 'Challenge cree',
     'challenges.updated': 'Challenge modifie',
     'challenges.cancel': 'Annuler',
@@ -90,6 +91,7 @@ registerTranslations({
     'challenges.noPeriod': 'No deadline',
     'challenges.edit': 'Edit',
     'challenges.editTitle': 'Edit challenge',
+    'challenges.fieldCurrent': 'Current amount',
     'challenges.created': 'Challenge created',
     'challenges.updated': 'Challenge updated',
     'challenges.cancel': 'Cancel',
@@ -212,6 +214,11 @@ export default function ChallengesScreen() {
       const base = editTarget.createdAt ? new Date(editTarget.createdAt) : new Date();
       patch.deadline = addPeriod(base, period).toISOString();
     }
+    // Montant actuel editable a la main UNIQUEMENT si le challenge n'a pas de
+    // leads (sinon le total est calcule a partir des leads valides).
+    if (!(editTarget.missions || []).length && v.current != null && v.current !== '') {
+      patch.currentAmount = Number(v.current) || 0;
+    }
     await Challenges.update(editTarget._id, patch);
     toast.success(t('challenges.updated'));
     setEditTarget(null);
@@ -308,7 +315,9 @@ export default function ChallengesScreen() {
       >
         <GradientCard style={{ marginBottom: spacing.lg }}>
           <Text style={styles.bannerLabel}>{t('challenges.bannerLabel')}</Text>
-          <Text style={styles.bannerValue}>{euro(totalReal)}</Text>
+          <Text style={styles.bannerValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            {euro(totalReal)}
+          </Text>
           <Text style={styles.bannerSub}>
             {t('challenges.bannerSub', { count: activeCount, amount: euro(totalPotential) })}
           </Text>
@@ -369,6 +378,10 @@ export default function ChallengesScreen() {
         title={t('challenges.editTitle')}
         fields={[
           { key: 'name', label: t('challenges.fieldName'), type: 'text', placeholder: t('challenges.fieldNamePlaceholder') },
+          // Montant actuel : editable seulement sans lead (sinon calcule depuis les leads).
+          editTarget && !(editTarget.missions || []).length
+            ? { key: 'current', label: t('challenges.fieldCurrent'), type: 'number', placeholder: '0' }
+            : null,
           { key: 'target', label: t('challenges.fieldTarget'), type: 'number', placeholder: '0' },
           {
             key: 'period',
@@ -382,11 +395,12 @@ export default function ChallengesScreen() {
             type: 'select',
             options: palette.map((c) => ({ label: ' ', value: c, color: c })),
           },
-        ]}
+        ].filter(Boolean)}
         initial={
           editTarget
             ? {
                 name: editTarget.title || '',
+                current: editTarget.currentAmount != null ? String(editTarget.currentAmount) : '',
                 target: editTarget.targetAmount != null ? String(editTarget.targetAmount) : '',
                 period: editTarget.period || '1m',
                 color: editTarget.color || palette[1],
