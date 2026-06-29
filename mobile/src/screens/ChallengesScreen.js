@@ -31,6 +31,10 @@ registerTranslations({
     'challenges.nameRequired': 'Donne un nom.',
     'challenges.untitled': 'Challenge sans nom',
     'challenges.noPeriod': 'Sans echeance',
+    'challenges.edit': 'Modifier',
+    'challenges.editTitle': 'Modifier le challenge',
+    'challenges.created': 'Challenge cree',
+    'challenges.updated': 'Challenge modifie',
     'challenges.cancel': 'Annuler',
     'challenges.delete': 'Supprimer',
     'challenges.createTitle': 'Nouveau challenge',
@@ -84,6 +88,10 @@ registerTranslations({
     'challenges.nameRequired': 'Enter a name.',
     'challenges.untitled': 'Untitled challenge',
     'challenges.noPeriod': 'No deadline',
+    'challenges.edit': 'Edit',
+    'challenges.editTitle': 'Edit challenge',
+    'challenges.created': 'Challenge created',
+    'challenges.updated': 'Challenge updated',
     'challenges.cancel': 'Cancel',
     'challenges.delete': 'Delete',
     'challenges.createTitle': 'New challenge',
@@ -153,6 +161,7 @@ export default function ChallengesScreen() {
   const [loaded, setLoaded] = useState(false); // evite le flash d'etat vide au 1er chargement
   const [refreshing, setRefreshing] = useState(false);
   const [createSheet, setCreateSheet] = useState(false);
+  const [editTarget, setEditTarget] = useState(null); // challenge en cours de modification
   const [pisteTarget, setPisteTarget] = useState(null); // challenge auquel on ajoute une piste
   const [validateTarget, setValidateTarget] = useState(null); // { challenge, mission }
 
@@ -184,6 +193,28 @@ export default function ChallengesScreen() {
       period,
       deadline: addPeriod(new Date(), period).toISOString(),
     });
+    toast.success(t('challenges.created'));
+    load();
+  };
+
+  // Modification d'un challenge existant (nom, objectif, periode, couleur).
+  const saveEdit = async (v) => {
+    if (!v.name?.trim()) throw new Error(t('challenges.nameRequired'));
+    const period = v.period || editTarget.period || '1m';
+    const patch = {
+      title: v.name.trim(),
+      targetAmount: Number(v.target) || 0,
+      color: v.color || editTarget.color || palette[1],
+      period,
+    };
+    // Si la periode change, on recalcule l'echeance depuis le debut du challenge.
+    if (period !== (editTarget.period || '')) {
+      const base = editTarget.createdAt ? new Date(editTarget.createdAt) : new Date();
+      patch.deadline = addPeriod(base, period).toISOString();
+    }
+    await Challenges.update(editTarget._id, patch);
+    toast.success(t('challenges.updated'));
+    setEditTarget(null);
     load();
   };
 
@@ -233,8 +264,11 @@ export default function ChallengesScreen() {
     }
   };
 
-  const confirmDelete = (item) => {
-    Alert.alert(t('challenges.deleteTitle'), t('challenges.deleteConfirm', { name: item.title }), [
+  const confirmDelete = (item, after) => {
+    Alert.alert(
+      t('challenges.deleteTitle'),
+      t('challenges.deleteConfirm', { name: item.title || t('challenges.untitled') }),
+      [
       { text: t('challenges.cancel'), style: 'cancel' },
       {
         text: t('challenges.delete'),
@@ -242,6 +276,7 @@ export default function ChallengesScreen() {
         onPress: async () => {
           try {
             await Challenges.remove(item._id);
+            after?.();
             load();
           } catch (e) {
             toast.error(e.message);
@@ -295,6 +330,7 @@ export default function ChallengesScreen() {
               item={item}
               onAddPiste={() => setPisteTarget(item)}
               onPressMission={(mission) => setValidateTarget({ challenge: item, mission })}
+              onEdit={() => setEditTarget(item)}
               onLongPress={() => confirmDelete(item)}
             />
           ))
@@ -325,6 +361,43 @@ export default function ChallengesScreen() {
         submitLabel={t('challenges.save')}
         onSubmit={create}
         onClose={() => setCreateSheet(false)}
+      />
+
+      {/* Modification d'un challenge */}
+      <FormSheet
+        visible={!!editTarget}
+        title={t('challenges.editTitle')}
+        fields={[
+          { key: 'name', label: t('challenges.fieldName'), type: 'text', placeholder: t('challenges.fieldNamePlaceholder') },
+          { key: 'target', label: t('challenges.fieldTarget'), type: 'number', placeholder: '0' },
+          {
+            key: 'period',
+            label: t('challenges.fieldPeriod'),
+            type: 'select',
+            options: PERIODS.map((p) => ({ label: t(`challenges.period.${p}`), value: p })),
+          },
+          {
+            key: 'color',
+            label: t('challenges.fieldColor'),
+            type: 'select',
+            options: palette.map((c) => ({ label: ' ', value: c, color: c })),
+          },
+        ]}
+        initial={
+          editTarget
+            ? {
+                name: editTarget.title || '',
+                target: editTarget.targetAmount != null ? String(editTarget.targetAmount) : '',
+                period: editTarget.period || '1m',
+                color: editTarget.color || palette[1],
+              }
+            : {}
+        }
+        submitLabel={t('challenges.save')}
+        onSubmit={saveEdit}
+        onClose={() => setEditTarget(null)}
+        onDelete={editTarget ? () => confirmDelete(editTarget, () => setEditTarget(null)) : undefined}
+        deleteLabel={t('challenges.delete')}
       />
 
       {/* Ajout d'une piste */}
@@ -379,7 +452,7 @@ export default function ChallengesScreen() {
 }
 
 // Carte d'un challenge : objectif + echeance + liste des pistes.
-function ChallengeCard({ item, onAddPiste, onPressMission, onLongPress }) {
+function ChallengeCard({ item, onAddPiste, onPressMission, onLongPress, onEdit }) {
   const t = useT();
   const [open, setOpen] = useState(true);
   const missions = item.missions || [];
@@ -417,10 +490,19 @@ function ChallengeCard({ item, onAddPiste, onPressMission, onLongPress }) {
             </Text>
           </View>
           {isDone ? (
-            <View style={styles.doneBadge}>
+            <View style={[styles.doneBadge, { marginRight: spacing.sm }]}>
               <Glyph name="check" color={colors.textOnTeal} size={14} />
             </View>
           ) : null}
+          {/* Modifier / supprimer le challenge (alternative explicite a l'appui long). */}
+          <Pressable
+            onPress={onEdit}
+            hitSlop={10}
+            style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.6 }]}
+            accessibilityLabel={t('challenges.edit')}
+          >
+            <Glyph name="dots" color={colors.textMuted} size={18} />
+          </Pressable>
         </View>
 
         <View style={styles.amounts}>
@@ -505,6 +587,16 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     backgroundColor: colors.positive,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.sm,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
