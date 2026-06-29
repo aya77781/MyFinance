@@ -29,6 +29,8 @@ registerTranslations({
     'challenges.deleteTitle': 'Supprimer',
     'challenges.deleteConfirm': 'Supprimer "{name}" ?',
     'challenges.nameRequired': 'Donne un nom.',
+    'challenges.untitled': 'Challenge sans nom',
+    'challenges.noPeriod': 'Sans echeance',
     'challenges.cancel': 'Annuler',
     'challenges.delete': 'Supprimer',
     'challenges.createTitle': 'Nouveau challenge',
@@ -80,6 +82,8 @@ registerTranslations({
     'challenges.deleteTitle': 'Delete',
     'challenges.deleteConfirm': 'Delete "{name}"?',
     'challenges.nameRequired': 'Enter a name.',
+    'challenges.untitled': 'Untitled challenge',
+    'challenges.noPeriod': 'No deadline',
     'challenges.cancel': 'Cancel',
     'challenges.delete': 'Delete',
     'challenges.createTitle': 'New challenge',
@@ -401,9 +405,14 @@ function ChallengeCard({ item, onAddPiste, onPressMission, onLongPress }) {
         <View style={styles.top}>
           <View style={[styles.accent, { backgroundColor: item.color }]} />
           <View style={{ flex: 1 }}>
-            <Text style={font.title} numberOfLines={1}>{item.title}</Text>
+            <Text
+              style={[font.title, !item.title && { color: colors.textMuted, fontStyle: 'italic' }]}
+              numberOfLines={1}
+            >
+              {item.title || t('challenges.untitled')}
+            </Text>
             <Text style={font.caption}>
-              {item.period ? t(`challenges.period.${item.period}`) : ''}
+              {item.period ? t(`challenges.period.${item.period}`) : t('challenges.noPeriod')}
               {deadlineText ? `  ·  ${deadlineText}` : ''}
             </Text>
           </View>
