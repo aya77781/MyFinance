@@ -1,5 +1,10 @@
 # Blueprint Render pour deployer le backend.
 # Sur https://render.com : New > Blueprint > pointe vers ce depot.
+#
+# IMPORTANT : le store backend utilise Supabase. Sans SUPABASE_URL ni
+# SUPABASE_SERVICE_ROLE_KEY, supabase-js leve "supabaseUrl is required." DES LE
+# DEMARRAGE (createClient dans supa.js) et le deploiement echoue (exit 1).
+# Ces deux variables DOIVENT etre renseignees dans le dashboard Render.
 services:
   - type: web
     name: finance-backend
@@ -8,18 +13,15 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: npm start
-    # Stockage en fichiers JSON. Pour conserver les donnees entre redeploiements,
-    # ajoute un disque persistant ci-dessous et regle DATA_DIR sur son point de
-    # montage (le disque persistant n'est pas dispo sur le plan "free").
-    # disk:
-    #   name: finance-data
-    #   mountPath: /data
-    #   sizeGB: 1
     envVars:
-      # - key: DATA_DIR
-      #   value: /data # a activer si tu ajoutes le disque persistant ci-dessus
       - key: JWT_SECRET
         generateValue: true # genere automatiquement
+      # --- Base de donnees (OBLIGATOIRE, sinon crash au demarrage) -------------
+      - key: SUPABASE_URL
+        sync: false # a remplir : URL du projet Supabase (https://xxxx.supabase.co)
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false # a remplir : cle service_role (NE JAMAIS exposer au frontend)
+      # --- Actualites (optionnel : une des deux cles suffit) ------------------
       - key: SERPAPI_KEY
         sync: false # a remplir dans le dashboard Render : cle serpapi.com (news, prioritaire)
       - key: GNEWS_API_TOKEN
