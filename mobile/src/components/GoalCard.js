@@ -12,12 +12,26 @@ registerTranslations({
 });
 
 // Carte d'objectif (epargne ou challenge) avec progression.
-export default function GoalCard({ title, subtitle, current, target, color, onAdd, onEdit, onLongPress }) {
+// `onPress` + `expanded` + `children` : permet de deplier un contenu sous la
+// carte (ex. l'historique des versements d'une pochette d'epargne).
+export default function GoalCard({
+  title,
+  subtitle,
+  current,
+  target,
+  color,
+  onAdd,
+  onEdit,
+  onPress,
+  onLongPress,
+  expanded,
+  children,
+}) {
   const t = useT();
   const progress = target > 0 ? current / target : 0;
   const pct = Math.round(progress * 100);
   return (
-    <Pressable onLongPress={onLongPress}>
+    <Pressable onPress={onPress} onLongPress={onLongPress}>
       <Card style={{ marginBottom: spacing.lg }}>
         <View style={styles.top}>
           <View style={[styles.accent, { backgroundColor: color }]} />
@@ -56,6 +70,14 @@ export default function GoalCard({ title, subtitle, current, target, color, onAd
             <Text style={styles.pct}>{t('goalCard.reached', { pct })}</Text>
           </>
         ) : null}
+
+        {expanded && children ? <View style={styles.expand}>{children}</View> : null}
+
+        {onPress ? (
+          <View style={styles.chevronWrap}>
+            <Glyph name={expanded ? 'arrowUp' : 'arrowDown'} color={colors.textMuted} size={16} />
+          </View>
+        ) : null}
       </Card>
     </Pressable>
   );
@@ -88,4 +110,11 @@ const styles = StyleSheet.create({
   current: { fontSize: 26, fontFamily: ff.extrabold, color: colors.text, letterSpacing: -0.5 },
   target: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
   pct: { ...font.caption, marginTop: spacing.sm, fontWeight: '700' },
+  expand: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  chevronWrap: { alignItems: 'center', marginTop: spacing.sm },
 });

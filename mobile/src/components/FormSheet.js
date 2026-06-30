@@ -35,6 +35,7 @@ export default function FormSheet({
   onClose,
   onDelete,
   deleteLabel,
+  footnote,
 }) {
   const t = useT();
   const toast = useToast();
@@ -134,9 +135,13 @@ export default function FormSheet({
                       style={styles.input}
                     />
                   )}
+
+                  {f.hint ? <Text style={styles.hint}>{f.hint}</Text> : null}
                 </View>
               ))}
             </ScrollView>
+
+            {footnote ? <Text style={styles.footnote}>{footnote}</Text> : null}
 
             <View style={{ marginTop: spacing.md }}>
               <Button title={submitLabel} onPress={submit} loading={saving} />
@@ -182,6 +187,13 @@ const styles = StyleSheet.create({
   close: { color: colors.primary, fontFamily: ff.bold, fontSize: 15 },
   field: { marginBottom: spacing.lg },
   label: { ...font.label, marginBottom: spacing.sm },
+  hint: { ...font.caption, marginTop: spacing.xs },
+  footnote: {
+    ...font.caption,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    color: colors.textMuted,
+  },
   input: {
     backgroundColor: colors.bgSoft,
     borderRadius: radius.md,

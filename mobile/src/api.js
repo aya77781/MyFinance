@@ -94,6 +94,8 @@ export const Savings = {
   create: (data) => api.post('/savings', data),
   update: (id, data) => api.put(`/savings/${id}`, data),
   contribute: (id, data) => api.post(`/savings/${id}/contributions`, data),
+  updateContribution: (id, cid, data) => api.put(`/savings/${id}/contributions/${cid}`, data),
+  removeContribution: (id, cid) => api.del(`/savings/${id}/contributions/${cid}`),
   remove: (id) => api.del(`/savings/${id}`),
 };
 

@@ -53,6 +53,21 @@ router.get('/', async (req, res, next) => {
       .filter((t) => t.type === 'income')
       .reduce((s, t) => s + Number(t.amount || 0), 0);
 
+    // Epargne mise de cote CE mois-ci : somme des versements (positifs = depot,
+    // negatifs = retrait) dont la date tombe dans le mois courant. Ce montant
+    // sort de l'argent disponible du mois (deduit du solde net), exactement
+    // comme une depense.
+    const savedThisMonth = savings.reduce((sum, sv) => {
+      const contribs = Array.isArray(sv.contributions) ? sv.contributions : [];
+      return (
+        sum +
+        contribs.reduce((cs, c) => {
+          const d = new Date(c.date);
+          return d >= start && d <= end ? cs + Number(c.amount || 0) : cs;
+        }, 0)
+      );
+    }, 0);
+
     // Depenses du mois groupees par categorie (pour le donut).
     const catMap = new Map();
     for (const t of monthTx) {
@@ -92,14 +107,18 @@ router.get('/', async (req, res, next) => {
     }
     const monthlyTrend = Object.values(trendMap);
 
-    const recent = [...allTx]
+    // Recents = mouvements DU MOIS affiche (pas l'historique global), pour
+    // rester coherent avec le solde / le donut du mois.
+    const recent = [...monthTx]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 8)
       .map((t) => ({ ...t, category: t.category ? catById.get(t.category) || null : null }));
 
     const totalSaved = savings.reduce((s, v) => s + Number(v.currentAmount || 0), 0);
     const realIncome = totalStableIncome + monthExtraIncome;
-    const totalOut = totalFixedCharges + monthExpenses;
+    // L'epargne du mois fait partie des sorties : ce qu'on met de cote n'est
+    // plus disponible pour le mois.
+    const totalOut = totalFixedCharges + monthExpenses + savedThisMonth;
     const net = realIncome - totalOut;
 
     res.json({
@@ -110,6 +129,7 @@ router.get('/', async (req, res, next) => {
         realIncome,
         fixedCharges: totalFixedCharges,
         variableExpenses: monthExpenses,
+        savedThisMonth,
         totalOut,
         net,
         totalSaved,

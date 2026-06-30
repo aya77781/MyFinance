@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, Alert, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Alert, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import Screen from '../components/Screen';
@@ -10,18 +10,18 @@ import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
 import { SkeletonRow } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
-import { colors, spacing, font } from '../theme';
+import { colors, spacing, font, ff } from '../theme';
 import { Transactions, Categories } from '../api';
 import { glyphForCategory } from '../components/Glyph';
-import { dateInput, parseDateInput, getLocale } from '../format';
+import { dateInput, parseDateInput, getLocale, monthLabel } from '../format';
 import { useT, registerTranslations } from '../i18n';
 
 registerTranslations({
   fr: {
     'transactions.title': 'Transactions',
     'transactions.subtitle': 'Tes mouvements',
-    'transactions.empty.title': 'Aucune transaction',
-    'transactions.empty.text': 'Appuie sur + pour ajouter ta premiere depense ou revenu.',
+    'transactions.empty.title': 'Aucune transaction ce mois',
+    'transactions.empty.text': 'Appuie sur + pour ajouter une depense ou un revenu sur ce mois.',
     'transactions.invalidAmount': 'Saisis un montant superieur a 0.',
     'transactions.saved': 'Transaction ajoutee',
     'transactions.updated': 'Transaction modifiee',
@@ -54,8 +54,8 @@ registerTranslations({
   en: {
     'transactions.title': 'Transactions',
     'transactions.subtitle': 'Your activity',
-    'transactions.empty.title': 'No transactions',
-    'transactions.empty.text': 'Tap + to add your first expense or income.',
+    'transactions.empty.title': 'No transactions this month',
+    'transactions.empty.text': 'Tap + to add an expense or income for this month.',
     'transactions.invalidAmount': 'Enter an amount greater than 0.',
     'transactions.saved': 'Transaction added',
     'transactions.updated': 'Transaction updated',
@@ -99,6 +99,8 @@ const INCOME_SOURCES = [
   { labelKey: 'transactions.source.autre', value: '__autre__', glyph: 'tag' },
 ];
 
+const NOW = new Date();
+
 export default function TransactionsScreen() {
   const t = useT();
   const toast = useToast();
@@ -108,25 +110,44 @@ export default function TransactionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [editing, setEditing] = useState(null); // transaction en cours d'edition
+  // Mois affiche (par defaut le mois courant) : on ne montre que les
+  // transactions de ce mois, pas l'historique complet.
+  const [sel, setSel] = useState({ year: NOW.getFullYear(), month: NOW.getMonth() });
 
-  const load = useCallback(async () => {
-    try {
-      const [tx, cats] = await Promise.all([Transactions.list('?limit=200'), Categories.list()]);
-      setItems(tx);
-      setCategories(cats);
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setLoaded(true);
-      setRefreshing(false);
-    }
-  }, [toast]);
+  const load = useCallback(
+    async (period = sel) => {
+      try {
+        const from = new Date(period.year, period.month, 1, 0, 0, 0, 0).toISOString();
+        const to = new Date(period.year, period.month + 1, 0, 23, 59, 59, 999).toISOString();
+        const [tx, cats] = await Promise.all([
+          Transactions.list(`?from=${from}&to=${to}&limit=200`),
+          Categories.list(),
+        ]);
+        setItems(tx);
+        setCategories(cats);
+      } catch (e) {
+        toast.error(e.message);
+      } finally {
+        setLoaded(true);
+        setRefreshing(false);
+      }
+    },
+    [toast, sel]
+  );
 
   useFocusEffect(
     useCallback(() => {
       load();
     }, [load])
   );
+
+  // Navigation entre mois (passes ou futurs).
+  const goMonth = (delta) => {
+    const d = new Date(sel.year, sel.month + delta, 1);
+    const next = { year: d.getFullYear(), month: d.getMonth() };
+    setSel(next);
+    load(next);
+  };
 
   const openNew = () => {
     setEditing(null);
@@ -217,7 +238,15 @@ export default function TransactionsScreen() {
         }
         return base;
       })()
-    : { type: 'expense', date: dateInput() };
+    : {
+        type: 'expense',
+        // Nouveau mouvement : date du jour si on est sur le mois courant,
+        // sinon le 1er du mois affiche (pour qu'il apparaisse dans la liste).
+        date:
+          sel.year === NOW.getFullYear() && sel.month === NOW.getMonth()
+            ? dateInput()
+            : dateInput(new Date(sel.year, sel.month, 1)),
+      };
 
   // Champs dynamiques : un revenu n'a pas de categorie de depense mais une source.
   const fields = (v) => {
@@ -293,6 +322,24 @@ export default function TransactionsScreen() {
           load();
         }}
       >
+        <View style={styles.monthNav}>
+          <Pressable
+            onPress={() => goMonth(-1)}
+            hitSlop={12}
+            style={({ pressed }) => [styles.monthArrow, pressed && { opacity: 0.5 }]}
+          >
+            <Text style={styles.monthArrowText}>‹</Text>
+          </Pressable>
+          <Text style={styles.monthLabel}>{monthLabel(sel.year, sel.month)}</Text>
+          <Pressable
+            onPress={() => goMonth(1)}
+            hitSlop={12}
+            style={({ pressed }) => [styles.monthArrow, pressed && { opacity: 0.5 }]}
+          >
+            <Text style={styles.monthArrowText}>›</Text>
+          </Pressable>
+        </View>
+
         {!loaded && items.length === 0 ? (
           <Card padded={false} style={{ paddingHorizontal: spacing.lg }}>
             {[0, 1, 2, 3, 4].map((i) => (
@@ -350,4 +397,21 @@ export default function TransactionsScreen() {
 
 const styles = StyleSheet.create({
   day: { ...font.label, textTransform: 'capitalize', marginBottom: spacing.sm, marginLeft: spacing.xs },
+  monthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  monthArrow: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  monthArrowText: { color: colors.text, fontFamily: ff.bold, fontSize: 24, lineHeight: 26 },
+  monthLabel: {
+    color: colors.text,
+    fontFamily: ff.bold,
+    fontSize: 16,
+    textTransform: 'capitalize',
+    minWidth: 150,
+    textAlign: 'center',
+  },
 });
