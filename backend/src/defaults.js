@@ -12,6 +12,8 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Abonnements', color: '#8B5CF6', type: 'expense' },
   { name: 'Shopping', color: '#F43F5E', type: 'expense' },
   { name: 'Cadeau', color: '#E879F9', type: 'expense' },
+  { name: 'Ecole', color: '#0EA5E9', type: 'expense' },
+  { name: 'Dettes', color: '#EF4444', type: 'expense' },
 ];
 
 // Categories de REVENU par defaut (type 'income'). Servent a classer les
@@ -21,6 +23,6 @@ export const DEFAULT_INCOME_CATEGORIES = [
   { name: 'Freelance', color: '#38BDF8', type: 'income' },
   { name: 'Babysitting', color: '#F472B6', type: 'income' },
   { name: 'Tutoring', color: '#A78BFA', type: 'income' },
-  { name: 'Menage', color: '#FACC15', type: 'income' },
+  { name: 'Mini job', color: '#FACC15', type: 'income' },
   { name: 'Competition', color: '#FB7185', type: 'income' },
 ];
