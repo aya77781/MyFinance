@@ -154,12 +154,17 @@ export default function DashboardScreen({ navigation }) {
   const totalExpenses = data.expensesByCategory.reduce((a, c) => a + c.total, 0);
   const initials = ((user?.name || user?.email || '?').trim()[0] || '?').toUpperCase();
 
-  // Jauge "solde net" : taux d'epargne = net / entrees (0..1).
+  // Jauge "solde net" : le remplissage de l'anneau represente la part du
+  // revenu qui reste (net / entrees, 0..1) — pas l'epargne.
   const isPositive = s.net >= 0;
   const tone = isPositive ? colors.positive : colors.negative;
-  const savedRate = s.realIncome > 0 ? Math.max(0, Math.min(1, s.net / s.realIncome)) : 0;
-  const gaugeProgress = isPositive ? Math.max(savedRate, 0.04) : 1;
-  const ratePct = Math.round(savedRate * 100);
+  const netRate = s.realIncome > 0 ? Math.max(0, Math.min(1, s.net / s.realIncome)) : 0;
+  const gaugeProgress = isPositive ? Math.max(netRate, 0.04) : 1;
+  // Pastille "X% epargne" : VRAI taux d'epargne = ce qui a ete mis en pochettes
+  // ce mois-ci rapporte au revenu (et non le net, qui inclut tout le reste).
+  const ratePct = s.realIncome > 0
+    ? Math.min(100, Math.max(0, Math.round((Number(s.savedThisMonth) || 0) / s.realIncome * 100)))
+    : 0;
 
   return (
     <ScrollView
