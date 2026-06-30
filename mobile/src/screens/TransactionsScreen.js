@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, Pressable, Alert, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import Screen from '../components/Screen';
@@ -15,6 +15,7 @@ import { Transactions, Categories } from '../api';
 import { glyphForCategory } from '../components/Glyph';
 import { dateInput, parseDateInput, getLocale, monthLabel } from '../format';
 import { useT, registerTranslations } from '../i18n';
+import { confirmAction } from '../confirm';
 
 registerTranslations({
   fr: {
@@ -196,23 +197,22 @@ export default function TransactionsScreen() {
     load();
   };
 
-  const confirmDelete = (tx, after) => {
-    Alert.alert(t('transactions.delete.title'), t('transactions.delete.message'), [
-      { text: t('transactions.delete.cancel'), style: 'cancel' },
-      {
-        text: t('transactions.delete.confirm'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await Transactions.remove(tx._id);
-            after?.();
-            load();
-          } catch (e) {
-            toast.error(e.message);
-          }
-        },
-      },
-    ]);
+  const confirmDelete = async (tx, after) => {
+    const ok = await confirmAction({
+      title: t('transactions.delete.title'),
+      message: t('transactions.delete.message'),
+      confirmLabel: t('transactions.delete.confirm'),
+      cancelLabel: t('transactions.delete.cancel'),
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await Transactions.remove(tx._id);
+      after?.();
+      load();
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
   // Valeurs initiales du formulaire selon le mode (creation ou edition).
