@@ -53,7 +53,10 @@ registerTranslations({
     'savings.deleted': 'Objectif supprime',
     'savings.contributionDeleted': 'Versement supprime',
     'savings.historyTitle': 'Versements',
+    'savings.historyHint': 'Touche un versement pour le modifier ou le supprimer.',
     'savings.historyEmpty': 'Aucun versement pour le moment.',
+    'savings.showContributions': 'Voir les versements ({count})',
+    'savings.hideContributions': 'Masquer les versements',
     'savings.deposit': 'Depot',
     'savings.withdraw': 'Retrait',
   },
@@ -91,7 +94,10 @@ registerTranslations({
     'savings.deleted': 'Goal deleted',
     'savings.contributionDeleted': 'Contribution deleted',
     'savings.historyTitle': 'Contributions',
+    'savings.historyHint': 'Tap a contribution to edit or delete it.',
     'savings.historyEmpty': 'No contributions yet.',
+    'savings.showContributions': 'View contributions ({count})',
+    'savings.hideContributions': 'Hide contributions',
     'savings.deposit': 'Deposit',
     'savings.withdraw': 'Withdrawal',
   },
@@ -255,6 +261,11 @@ export default function SavingsScreen() {
               onEdit={() => setEditTarget(item)}
               onPress={() => setExpandedId((id) => (id === item._id ? null : item._id))}
               expanded={expandedId === item._id}
+              expandHint={
+                expandedId === item._id
+                  ? t('savings.hideContributions')
+                  : t('savings.showContributions', { count: (item.contributions || []).length })
+              }
               onLongPress={() => confirmDelete(item)}
             >
               <ContributionHistory
@@ -382,7 +393,9 @@ function ContributionHistory({ t, contributions, onEdit }) {
       {list.length === 0 ? (
         <Text style={styles.historyEmpty}>{t('savings.historyEmpty')}</Text>
       ) : (
-        list.map((c) => {
+        <>
+        <Text style={styles.historyHint}>{t('savings.historyHint')}</Text>
+        {list.map((c) => {
           const positive = Number(c.amount) >= 0;
           return (
             <Pressable
@@ -402,7 +415,8 @@ function ContributionHistory({ t, contributions, onEdit }) {
               </Text>
             </Pressable>
           );
-        })
+        })}
+        </>
       )}
     </View>
   );
@@ -412,7 +426,8 @@ const styles = {
   totalLabel: { color: colors.textOnBrandMuted, fontSize: 14, fontWeight: '600' },
   totalValue: { color: '#fff', fontFamily: 'Manrope_800ExtraBold', fontSize: 38, marginTop: 4, letterSpacing: -1 },
   totalSub: { color: colors.textOnBrandMuted, fontSize: 13, fontWeight: '600', marginTop: 4 },
-  historyTitle: { ...font.label, marginBottom: spacing.sm },
+  historyTitle: { ...font.label, marginBottom: spacing.xs },
+  historyHint: { ...font.caption, marginBottom: spacing.sm },
   historyEmpty: { ...font.caption, paddingVertical: spacing.sm },
   contribRow: {
     flexDirection: 'row',

@@ -25,6 +25,7 @@ export default function GoalCard({
   onPress,
   onLongPress,
   expanded,
+  expandHint,
   children,
 }) {
   const t = useT();
@@ -75,7 +76,8 @@ export default function GoalCard({
 
         {onPress ? (
           <View style={styles.chevronWrap}>
-            <Glyph name={expanded ? 'arrowUp' : 'arrowDown'} color={colors.textMuted} size={16} />
+            {expandHint ? <Text style={styles.expandHint}>{expandHint}</Text> : null}
+            <Glyph name={expanded ? 'arrowUp' : 'arrowDown'} color={colors.primary} size={16} />
           </View>
         ) : null}
       </Card>
@@ -116,5 +118,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  chevronWrap: { alignItems: 'center', marginTop: spacing.sm },
+  chevronWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, marginTop: spacing.sm },
+  expandHint: { color: colors.primary, fontFamily: ff.semibold, fontSize: 13 },
 });
