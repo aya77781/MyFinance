@@ -117,6 +117,16 @@ export const Challenges = {
   remove: (id) => api.del(`/challenges/${id}`),
 };
 
+// Life : activités du mois + roue de tirage aléatoire (1 tirage / jour).
+export const Life = {
+  list: () => api.get('/life'),
+  create: (data) => api.post('/life', data),
+  update: (id, data) => api.put(`/life/${id}`, data),
+  draw: (id) => api.post(`/life/${id}/draw`, {}),
+  reset: () => api.post('/life/reset', {}),
+  remove: (id) => api.del(`/life/${id}`),
+};
+
 export const Opportunities = {
   list: () => api.get('/opportunities'),
   create: (data) => api.post('/opportunities', data),

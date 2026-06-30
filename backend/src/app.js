@@ -12,6 +12,7 @@ import challenges from './routes/challenges.js';
 import opportunities from './routes/opportunities.js';
 import dashboard from './routes/dashboard.js';
 import market from './routes/market.js';
+import life from './routes/life.js';
 
 // Construit l'app Express. Reutilisable en serveur local (server.js) ET en
 // fonction serverless (api/index.js sur Vercel).
@@ -34,6 +35,7 @@ app.use('/api/challenges', challenges);
 app.use('/api/opportunities', opportunities);
 app.use('/api/dashboard', dashboard);
 app.use('/api/market', market);
+app.use('/api/life', life);
 
 // Route inconnue -> 404 JSON (au lieu du HTML par defaut d'Express).
 app.use((req, res) => {

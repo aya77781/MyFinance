@@ -32,6 +32,7 @@ const NUMERIC_KEYS = new Set([
   'planned',
   'estimatedAmount',
   'actualAmount',
+  'budget',
 ]);
 
 const camelToSnake = (s) => s.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase());

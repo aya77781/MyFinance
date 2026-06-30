@@ -241,6 +241,17 @@ export default function Glyph({ name, color = '#10131A', size = 22, strokeWidth 
           <Line x1="6.5" y1="14.5" x2="11" y2="14.5" />
         </G>
       );
+    case 'wheel': // Onglet Life : roue de la fortune (cercle + rayons)
+      return V(
+        <G {...p}>
+          <Circle cx="12" cy="12" r="8.5" />
+          <Line x1="12" y1="3.5" x2="12" y2="20.5" />
+          <Line x1="3.5" y1="12" x2="20.5" y2="12" />
+          <Line x1="6" y1="6" x2="18" y2="18" />
+          <Line x1="18" y1="6" x2="6" y2="18" />
+          <Circle cx="12" cy="12" r="1.4" fill={color} stroke="none" />
+        </G>
+      );
     case 'tag':
     default:
       return V(

@@ -9,6 +9,7 @@ import SavingsScreen from '../screens/SavingsScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
 import OpportunitiesScreen from '../screens/OpportunitiesScreen';
 import MarketScreen from '../screens/MarketScreen';
+import LifeScreen from '../screens/LifeScreen';
 import Glyph from '../components/Glyph';
 import { colors, ff } from '../theme';
 import { useT, registerTranslations } from '../i18n';
@@ -22,6 +23,7 @@ registerTranslations({
     'tabs.Challenges': 'Defis',
     'tabs.Opportunites': 'Opport.',
     'tabs.Marche': 'Marche',
+    'tabs.Life': 'Life',
   },
   en: {
     'tabs.Accueil': 'Home',
@@ -31,6 +33,7 @@ registerTranslations({
     'tabs.Challenges': 'Challenges',
     'tabs.Opportunites': 'Opport.',
     'tabs.Marche': 'Market',
+    'tabs.Life': 'Life',
   },
 });
 
@@ -44,6 +47,7 @@ const ICONS = {
   Challenges: 'target',
   Opportunites: 'trending',
   Marche: 'news',
+  Life: 'wheel',
 };
 
 export default function Tabs() {
@@ -98,6 +102,7 @@ export default function Tabs() {
       <Tab.Screen name="Budget" component={BudgetScreen} />
       <Tab.Screen name="Epargne" component={SavingsScreen} />
       <Tab.Screen name="Challenges" component={ChallengesScreen} />
+      <Tab.Screen name="Life" component={LifeScreen} />
       <Tab.Screen name="Opportunites" component={OpportunitiesScreen} />
     </Tab.Navigator>
   );

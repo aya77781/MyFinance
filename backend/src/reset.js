@@ -6,11 +6,12 @@ import Transaction from './models/Transaction.js';
 import Saving from './models/Saving.js';
 import Challenge from './models/Challenge.js';
 import Opportunity from './models/Opportunity.js';
+import Life from './models/Life.js';
 
 // Vide TOUTES les donnees (comptes inclus). A utiliser pour repartir de zero.
 // L'ordre supprime d'abord les tables enfants/dependantes. Les contributions et
 // entries partent en cascade (ON DELETE CASCADE) avec savings / challenges.
-const collections = [Transaction, Income, FixedCharge, Category, Saving, Challenge, Opportunity, User];
+const collections = [Transaction, Income, FixedCharge, Category, Saving, Challenge, Opportunity, Life, User];
 
 const counts = await Promise.all(collections.map((c) => c.clear()));
 const total = counts.reduce((s, n) => s + n, 0);
