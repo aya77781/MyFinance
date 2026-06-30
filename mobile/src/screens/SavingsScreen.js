@@ -29,6 +29,7 @@ registerTranslations({
     'savings.cancel': 'Annuler',
     'savings.delete': 'Supprimer',
     'savings.newPocket': 'Nouvelle pochette',
+    'savings.editPocket': 'Modifier la pochette',
     'savings.fieldName': 'Nom',
     'savings.fieldNamePlaceholder': 'Ex : Vacances',
     'savings.fieldTarget': 'Objectif',
@@ -55,6 +56,7 @@ registerTranslations({
     'savings.cancel': 'Cancel',
     'savings.delete': 'Delete',
     'savings.newPocket': 'New pocket',
+    'savings.editPocket': 'Edit pocket',
     'savings.fieldName': 'Name',
     'savings.fieldNamePlaceholder': 'e.g. Holidays',
     'savings.fieldTarget': 'Goal',
@@ -79,6 +81,7 @@ export default function SavingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [createSheet, setCreateSheet] = useState(false);
   const [contribTarget, setContribTarget] = useState(null);
+  const [editTarget, setEditTarget] = useState(null); // pochette en cours de modification
 
   const load = useCallback(async () => {
     try {
@@ -117,6 +120,19 @@ export default function SavingsScreen() {
     await Savings.contribute(contribTarget._id, { amount: Number(v.amount), note: v.note || '' });
     toast.success(t('savings.updated'));
     setContribTarget(null);
+    load();
+  };
+
+  // Modification d'une pochette : nom, objectif, couleur.
+  const saveEdit = async (v) => {
+    if (!v.name?.trim()) throw new Error(t('savings.nameRequired'));
+    await Savings.update(editTarget._id, {
+      name: v.name.trim(),
+      targetAmount: Number(v.target) || 0,
+      color: v.color || editTarget.color || palette[0],
+    });
+    toast.success(t('savings.updated'));
+    setEditTarget(null);
     load();
   };
 
@@ -176,6 +192,7 @@ export default function SavingsScreen() {
               target={item.targetAmount}
               color={item.color}
               onAdd={() => setContribTarget(item)}
+              onEdit={() => setEditTarget(item)}
               onLongPress={() => confirmDelete(item)}
             />
           ))
@@ -210,6 +227,35 @@ export default function SavingsScreen() {
         submitLabel={t('savings.submitContribute')}
         onSubmit={contribute}
         onClose={() => setContribTarget(null)}
+      />
+
+      {/* Modification d'une pochette : nom, objectif, couleur */}
+      <FormSheet
+        visible={!!editTarget}
+        title={t('savings.editPocket')}
+        fields={[
+          { key: 'name', label: t('savings.fieldName'), type: 'text', placeholder: t('savings.fieldNamePlaceholder') },
+          { key: 'target', label: t('savings.fieldTarget'), type: 'number', placeholder: '0' },
+          {
+            key: 'color',
+            label: t('savings.fieldColor'),
+            type: 'select',
+            options: palette.map((c) => ({ label: ' ', value: c, color: c })),
+          },
+        ]}
+        initial={
+          editTarget
+            ? {
+                name: editTarget.name || '',
+                target: editTarget.targetAmount != null ? String(editTarget.targetAmount) : '',
+                color: editTarget.color || palette[0],
+              }
+            : {}
+        }
+        onSubmit={saveEdit}
+        onClose={() => setEditTarget(null)}
+        onDelete={editTarget ? () => { setEditTarget(null); confirmDelete(editTarget); } : undefined}
+        deleteLabel={t('savings.delete')}
       />
     </>
   );

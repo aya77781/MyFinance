@@ -1,17 +1,18 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Card from './Card';
 import ProgressBar from './ProgressBar';
+import Glyph from './Glyph';
 import { colors, spacing, font, radius, ff } from '../theme';
 import { euro } from '../format';
 import { useT, registerTranslations } from '../i18n';
 
 registerTranslations({
-  fr: { 'goalCard.add': 'Ajouter', 'goalCard.reached': '{pct}% atteint' },
-  en: { 'goalCard.add': 'Add', 'goalCard.reached': '{pct}% reached' },
+  fr: { 'goalCard.add': 'Ajouter', 'goalCard.reached': '{pct}% atteint', 'goalCard.edit': 'Modifier' },
+  en: { 'goalCard.add': 'Add', 'goalCard.reached': '{pct}% reached', 'goalCard.edit': 'Edit' },
 });
 
 // Carte d'objectif (epargne ou challenge) avec progression.
-export default function GoalCard({ title, subtitle, current, target, color, onAdd, onLongPress }) {
+export default function GoalCard({ title, subtitle, current, target, color, onAdd, onEdit, onLongPress }) {
   const t = useT();
   const progress = target > 0 ? current / target : 0;
   const pct = Math.round(progress * 100);
@@ -32,6 +33,16 @@ export default function GoalCard({ title, subtitle, current, target, color, onAd
           >
             <Text style={styles.addText}>{t('goalCard.add')}</Text>
           </Pressable>
+          {onEdit ? (
+            <Pressable
+              onPress={onEdit}
+              hitSlop={10}
+              style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.6 }]}
+              accessibilityLabel={t('goalCard.edit')}
+            >
+              <Glyph name="dots" color={colors.textMuted} size={18} />
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.amounts}>
@@ -62,6 +73,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addText: { color: colors.primary, fontWeight: '700', fontSize: 13 },
+  editBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.sm,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+  },
   amounts: { flexDirection: 'row', alignItems: 'baseline', marginBottom: spacing.md },
   current: { fontSize: 26, fontFamily: ff.extrabold, color: colors.text, letterSpacing: -0.5 },
   target: { fontSize: 15, fontWeight: '600', color: colors.textMuted },

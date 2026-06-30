@@ -52,6 +52,8 @@ registerTranslations({
     'challenges.real': 'Reel',
     'challenges.toValidate': 'A valider',
     'challenges.validate': 'Valider',
+    'challenges.pisteTotalEstimated': 'Total estime',
+    'challenges.pisteEarned': 'Gagne',
     'challenges.pisteTitle': 'Nouvelle piste',
     'challenges.editPisteTitle': 'Piste : {name}',
     'challenges.fieldPisteName': 'Intitule',
@@ -110,6 +112,8 @@ registerTranslations({
     'challenges.real': 'Actual',
     'challenges.toValidate': 'To confirm',
     'challenges.validate': 'Confirm',
+    'challenges.pisteTotalEstimated': 'Total estimated',
+    'challenges.pisteEarned': 'Earned',
     'challenges.pisteTitle': 'New lead',
     'challenges.editPisteTitle': 'Lead: {name}',
     'challenges.fieldPisteName': 'Title',
@@ -236,12 +240,18 @@ export default function ChallengesScreen() {
     load();
   };
 
+  // Enregistre une piste : intitule + estime toujours modifiables ; si un montant
+  // reel est saisi, la piste est validee (done), sinon elle reste a valider.
   const submitValidate = async (v) => {
     if (!validateTarget) return;
+    if (!v.name?.trim()) throw new Error(t('challenges.nameRequired'));
     const { challenge, mission } = validateTarget;
+    const hasActual = v.actual != null && String(v.actual).trim() !== '';
     await Challenges.updateMission(challenge._id, mission._id, {
-      actualAmount: Number(v.actual) || 0,
-      done: true,
+      title: v.name.trim(),
+      estimatedAmount: Number(v.estimated) || 0,
+      actualAmount: hasActual ? Number(v.actual) || 0 : null,
+      done: hasActual,
     });
     setValidateTarget(null);
     load();
@@ -427,25 +437,31 @@ export default function ChallengesScreen() {
         onClose={() => setPisteTarget(null)}
       />
 
-      {/* Validation d'une piste : saisie du montant reel gagne */}
+      {/* Modification / validation d'une piste : intitule + estime + montant reel */}
       <FormSheet
         visible={!!validateTarget}
-        title={validateTarget ? t('challenges.validateTitle', { name: validateTarget.mission.title }) : ''}
+        title={validateTarget ? t('challenges.editPisteTitle', { name: validateTarget.mission.title }) : ''}
         fields={[
+          { key: 'name', label: t('challenges.fieldPisteName'), type: 'text', placeholder: t('challenges.fieldPisteNamePlaceholder') },
+          { key: 'estimated', label: t('challenges.fieldEstimated'), type: 'number', placeholder: '0' },
           { key: 'actual', label: t('challenges.fieldActual'), type: 'number', placeholder: '0' },
         ]}
         initial={
           validateTarget
             ? {
-                actual: String(
+                name: validateTarget.mission.title || '',
+                estimated:
+                  validateTarget.mission.estimatedAmount != null
+                    ? String(validateTarget.mission.estimatedAmount)
+                    : '',
+                actual:
                   validateTarget.mission.actualAmount != null
-                    ? validateTarget.mission.actualAmount
-                    : validateTarget.mission.estimatedAmount || ''
-                ),
+                    ? String(validateTarget.mission.actualAmount)
+                    : '',
               }
             : {}
         }
-        submitLabel={t('challenges.submit')}
+        submitLabel={t('challenges.save')}
         onSubmit={submitValidate}
         onClose={() => setValidateTarget(null)}
         onDelete={
@@ -470,6 +486,11 @@ function ChallengeCard({ item, onAddPiste, onPressMission, onLongPress, onEdit }
   const t = useT();
   const [open, setOpen] = useState(true);
   const missions = item.missions || [];
+  // Totaux des pistes : potentiel estime + ce qui a deja ete gagne (pistes validees).
+  const totalEstimated = missions.reduce((a, m) => a + (Number(m.estimatedAmount) || 0), 0);
+  const totalEarned = missions
+    .filter((m) => m.done)
+    .reduce((a, m) => a + (Number(m.actualAmount) || 0), 0);
   const target = Number(item.targetAmount) || 0;
   const current = Number(item.currentAmount) || 0;
   const progress = target > 0 ? current / target : 0;
@@ -585,6 +606,20 @@ function ChallengeCard({ item, onAddPiste, onPressMission, onLongPress, onEdit }
             </Pressable>
           ))
         )}
+
+        {/* Total des pistes (petit, en bas) : potentiel estime + deja gagne. */}
+        {open && missions.length > 0 ? (
+          <View style={styles.pisteFooter}>
+            <Text style={styles.pisteFooterLabel}>{t('challenges.pisteTotalEstimated')}</Text>
+            <View style={{ flex: 1 }} />
+            {totalEarned > 0 ? (
+              <Text style={styles.pisteFooterEarned}>
+                {t('challenges.pisteEarned')} +{euro(totalEarned)}
+              </Text>
+            ) : null}
+            <Text style={styles.pisteFooterValue}>{euro(totalEstimated)}</Text>
+          </View>
+        ) : null}
       </Card>
     </Pressable>
   );
@@ -641,6 +676,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pisteReal: { color: colors.positive, fontFamily: ff.bold, fontSize: 15 },
+  pisteFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  pisteFooterLabel: { ...font.caption, fontWeight: '700' },
+  pisteFooterEarned: { color: colors.positive, fontFamily: ff.bold, fontSize: 12.5 },
+  pisteFooterValue: { color: colors.text, fontFamily: ff.bold, fontSize: 14 },
   validatePill: {
     backgroundColor: colors.primarySoft,
     paddingHorizontal: spacing.md,

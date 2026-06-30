@@ -75,18 +75,23 @@ export default function DashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  // Mois affiche : null = mois courant (le backend choisit), sinon { year, month }.
+  const [sel, setSel] = useState(null);
 
-  const load = useCallback(async () => {
-    try {
-      setError(null);
-      setData(await Dashboard.get());
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (period = sel) => {
+      try {
+        setError(null);
+        setData(await Dashboard.get(period?.year, period?.month));
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [sel]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -137,6 +142,14 @@ export default function DashboardScreen({ navigation }) {
 
   const s = data.summary;
   const { year, month } = data.period;
+
+  // Navigation entre mois (passes ou futurs, pour preparer les mois a venir).
+  const goMonth = (delta) => {
+    const d = new Date(year, month + delta, 1);
+    const next = { year: d.getFullYear(), month: d.getMonth() };
+    setSel(next);
+    load(next);
+  };
   const donutData = data.expensesByCategory.map((c) => ({ value: c.total, color: c.color }));
   const totalExpenses = data.expensesByCategory.reduce((a, c) => a + c.total, 0);
   const initials = ((user?.name || user?.email || '?').trim()[0] || '?').toUpperCase();
@@ -207,7 +220,23 @@ export default function DashboardScreen({ navigation }) {
             </View>
           </GaugeRing>
         </View>
-        <Text style={styles.gaugeMonth}>{t('dashboard.balanceLabel', { month: monthLabel(year, month) })}</Text>
+        <View style={styles.monthNav}>
+          <Pressable
+            onPress={() => goMonth(-1)}
+            hitSlop={12}
+            style={({ pressed }) => [styles.monthArrow, pressed && { opacity: 0.5 }]}
+          >
+            <Text style={styles.monthArrowText}>‹</Text>
+          </Pressable>
+          <Text style={styles.gaugeMonth}>{t('dashboard.balanceLabel', { month: monthLabel(year, month) })}</Text>
+          <Pressable
+            onPress={() => goMonth(1)}
+            hitSlop={12}
+            style={({ pressed }) => [styles.monthArrow, pressed && { opacity: 0.5 }]}
+          >
+            <Text style={styles.monthArrowText}>›</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.actions}>
           <ActionTile glyph="plus" label={t('dashboard.add')} onBrand onPress={() => navigation.navigate('Transactions')} />
@@ -356,13 +385,31 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   gaugePillText: { fontFamily: ff.bold, fontSize: 12 },
+  monthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
+  monthArrow: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthArrowText: {
+    color: '#fff',
+    fontFamily: ff.bold,
+    fontSize: 22,
+    lineHeight: 24,
+  },
   gaugeMonth: {
     color: colors.textOnBrandMuted,
     fontFamily: ff.semibold,
     fontSize: 13,
     textAlign: 'center',
     textTransform: 'capitalize',
-    marginTop: spacing.lg,
   },
   // maxWidth borne la ligne au diametre interne de l'anneau (236 - 2*strokeWidth) :
   // sans largeur contrainte, adjustsFontSizeToFit ne reduit jamais la police et

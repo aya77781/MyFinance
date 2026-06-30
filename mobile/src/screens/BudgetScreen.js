@@ -74,6 +74,8 @@ registerTranslations({
     'budget.defaultNote': 'Budget {month}',
     // Sheets
     'budget.sheet.newIncome': 'Nouveau revenu stable',
+    'budget.sheet.editIncome': 'Modifier le revenu',
+    'budget.sheet.editCharge': 'Modifier la charge',
     'budget.sheet.name': 'Nom',
     'budget.sheet.namePhSalary': 'Ex : Salaire mars',
     'budget.sheet.incomeCategory': 'Categorie de revenu',
@@ -155,6 +157,8 @@ registerTranslations({
     'budget.defaultNote': 'Budget {month}',
     // Sheets
     'budget.sheet.newIncome': 'New stable income',
+    'budget.sheet.editIncome': 'Edit income',
+    'budget.sheet.editCharge': 'Edit expense',
     'budget.sheet.name': 'Name',
     'budget.sheet.namePhSalary': 'E.g. March salary',
     'budget.sheet.incomeCategory': 'Income category',
@@ -206,6 +210,7 @@ export default function BudgetScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [sheet, setSheet] = useState(null); // 'income' | 'charge' | 'category' | 'validate'
   const [editingCat, setEditingCat] = useState(null); // categorie en cours d'edition
+  const [editingItem, setEditingItem] = useState(null); // { kind: 'income'|'charge', item }
   const [validating, setValidating] = useState(null); // categorie a valider ce mois
   const [timeMode, setTimeMode] = useState('month'); // 'month' | 'year'
   const [monthOffset, setMonthOffset] = useState(0); // 0 = mois courant, +1 = mois prochain...
@@ -377,12 +382,19 @@ export default function BudgetScreen() {
   const closeSheet = () => {
     setSheet(null);
     setEditingCat(null);
+    setEditingItem(null);
     setValidating(null);
   };
 
   const openEditCat = (c) => {
     setEditingCat(c);
     setSheet(c.type === 'income' ? 'incomeCategory' : 'category');
+  };
+
+  // Edition d'un revenu stable / d'une charge fixe (memes feuilles que la creation).
+  const openEditItem = (kind, item) => {
+    setEditingItem({ kind, item });
+    setSheet(kind);
   };
 
   const openValidate = (c) => {
@@ -398,19 +410,23 @@ export default function BudgetScreen() {
       throw new Error(t('budget.errAmountRequired'));
     }
     if (sheet === 'income') {
-      await Income.create({
+      const payload = {
         name: v.name,
         amount: Number(v.amount),
         dayOfMonth: Number(v.day) || 1,
         category: v.category || null,
-      });
+      };
+      if (editingItem?.kind === 'income') await Income.update(editingItem.item._id, payload);
+      else await Income.create(payload);
     } else if (sheet === 'charge') {
-      await Charges.create({
+      const payload = {
         name: v.name,
         amount: Number(v.amount),
         category: v.category || null,
         dayOfMonth: Number(v.day) || 1,
-      });
+      };
+      if (editingItem?.kind === 'charge') await Charges.update(editingItem.item._id, payload);
+      else await Charges.create(payload);
     } else if (sheet === 'category') {
       const payload = {
         name: v.name,
@@ -480,7 +496,7 @@ export default function BudgetScreen() {
 
   const sheetConfig = {
     income: {
-      title: t('budget.sheet.newIncome'),
+      title: editingItem?.kind === 'income' ? t('budget.sheet.editIncome') : t('budget.sheet.newIncome'),
       fields: [
         { key: 'name', label: t('budget.sheet.name'), type: 'text', placeholder: t('budget.sheet.namePhSalary') },
         {
@@ -497,9 +513,22 @@ export default function BudgetScreen() {
         { key: 'amount', label: t('budget.sheet.monthlyAmount'), type: 'number', placeholder: '0' },
         { key: 'day', label: t('budget.sheet.dayOfMonth'), type: 'number', placeholder: '1' },
       ],
+      initial:
+        editingItem?.kind === 'income'
+          ? {
+              name: editingItem.item.name || '',
+              category: editingItem.item.category || null,
+              amount: editingItem.item.amount != null ? String(editingItem.item.amount) : '',
+              day: editingItem.item.dayOfMonth != null ? String(editingItem.item.dayOfMonth) : '',
+            }
+          : undefined,
+      onDelete:
+        editingItem?.kind === 'income'
+          ? () => removeItem('income', editingItem.item, closeSheet)
+          : undefined,
     },
     charge: {
-      title: t('budget.sheet.newCharge'),
+      title: editingItem?.kind === 'charge' ? t('budget.sheet.editCharge') : t('budget.sheet.newCharge'),
       fields: [
         { key: 'name', label: t('budget.sheet.name'), type: 'text', placeholder: t('budget.sheet.namePhRent') },
         { key: 'amount', label: t('budget.sheet.monthlyAmount'), type: 'number', placeholder: '0' },
@@ -516,6 +545,19 @@ export default function BudgetScreen() {
         },
         { key: 'day', label: t('budget.sheet.dayOfMonth'), type: 'number', placeholder: '1' },
       ],
+      initial:
+        editingItem?.kind === 'charge'
+          ? {
+              name: editingItem.item.name || '',
+              amount: editingItem.item.amount != null ? String(editingItem.item.amount) : '',
+              category: editingItem.item.category?._id || editingItem.item.category || null,
+              day: editingItem.item.dayOfMonth != null ? String(editingItem.item.dayOfMonth) : '',
+            }
+          : undefined,
+      onDelete:
+        editingItem?.kind === 'charge'
+          ? () => removeItem('charge', editingItem.item, closeSheet)
+          : undefined,
     },
     category: {
       title: editingCat ? t('budget.sheet.editCategory') : t('budget.sheet.newCategory'),
@@ -616,6 +658,7 @@ export default function BudgetScreen() {
                   amount={euro(i.amount)}
                   color={cat?.color || colors.positive}
                   last={idx === income.length - 1}
+                  onPress={() => openEditItem('income', i)}
                   onLongPress={() => removeItem('income', i)}
                 />
               );
@@ -636,6 +679,7 @@ export default function BudgetScreen() {
                 amount={`-${euro(c.amount)}`}
                 color={c.category?.color || colors.negative}
                 last={idx === charges.length - 1}
+                onPress={() => openEditItem('charge', c)}
                 onLongPress={() => removeItem('charge', c)}
               />
             ))
