@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import Screen from '../components/Screen';
@@ -8,6 +8,7 @@ import AddButton from '../components/AddButton';
 import TransactionRow from '../components/TransactionRow';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
+import Button from '../components/Button';
 import { SkeletonRow } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { colors, spacing, font, ff } from '../theme';
@@ -15,7 +16,6 @@ import { Transactions, Categories } from '../api';
 import { glyphForCategory } from '../components/Glyph';
 import { dateInput, parseDateInput, getLocale, monthLabel } from '../format';
 import { useT, registerTranslations } from '../i18n';
-import { confirmAction } from '../confirm';
 
 registerTranslations({
   fr: {
@@ -92,7 +92,7 @@ registerTranslations({
 // Les libelles sont traduits a l'affichage ; les `value` restent inchangees (mappage donnees).
 const INCOME_SOURCES = [
   { labelKey: 'transactions.source.salaire', value: 'Salaire', glyph: 'briefcase' },
-  { labelKey: 'transactions.source.menage', value: 'Menage', glyph: 'sparkle' },
+  { labelKey: 'transactions.source.menage', value: 'Menage', glyph: 'coins' },
   { labelKey: 'transactions.source.babysitting', value: 'Babysitting', glyph: 'baby' },
   { labelKey: 'transactions.source.tutoring', value: 'Tutoring', glyph: 'book' },
   { labelKey: 'transactions.source.freelance', value: 'Freelance', glyph: 'laptop' },
@@ -111,6 +111,9 @@ export default function TransactionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [editing, setEditing] = useState(null); // transaction en cours d'edition
+  // Confirmation de suppression in-app (fiable sur web, contrairement a Alert/window.confirm).
+  const [pendingDelete, setPendingDelete] = useState(null); // { tx, after } | null
+  const [deleting, setDeleting] = useState(false);
   // Mois affiche (par defaut le mois courant) : on ne montre que les
   // transactions de ce mois, pas l'historique complet.
   const [sel, setSel] = useState({ year: NOW.getFullYear(), month: NOW.getMonth() });
@@ -197,21 +200,25 @@ export default function TransactionsScreen() {
     load();
   };
 
-  const confirmDelete = async (tx, after) => {
-    const ok = await confirmAction({
-      title: t('transactions.delete.title'),
-      message: t('transactions.delete.message'),
-      confirmLabel: t('transactions.delete.confirm'),
-      cancelLabel: t('transactions.delete.cancel'),
-      destructive: true,
-    });
-    if (!ok) return;
+  // Ouvre la confirmation in-app (au lieu d'Alert.alert, dont les boutons ne
+  // s'affichent pas sur le web -> suppression silencieusement ignoree).
+  const confirmDelete = (tx, after) => {
+    setPendingDelete({ tx, after });
+  };
+
+  const doDelete = async () => {
+    if (!pendingDelete) return;
+    const { tx, after } = pendingDelete;
     try {
+      setDeleting(true);
       await Transactions.remove(tx._id);
+      setPendingDelete(null);
       after?.();
       load();
     } catch (e) {
       toast.error(e.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -391,6 +398,35 @@ export default function TransactionsScreen() {
         onClose={closeSheet}
         onDelete={editing ? () => confirmDelete(editing, closeSheet) : undefined}
       />
+
+      <Modal
+        visible={!!pendingDelete}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setPendingDelete(null)}
+      >
+        <View style={styles.confirmBackdrop}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>{t('transactions.delete.title')}</Text>
+            <Text style={styles.confirmMsg}>{t('transactions.delete.message')}</Text>
+            <View style={{ marginTop: spacing.lg }}>
+              <Button
+                title={t('transactions.delete.confirm')}
+                onPress={doDelete}
+                loading={deleting}
+                variant="danger"
+              />
+            </View>
+            <Pressable
+              onPress={() => setPendingDelete(null)}
+              hitSlop={8}
+              style={styles.confirmCancel}
+            >
+              <Text style={styles.confirmCancelText}>{t('transactions.delete.cancel')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -414,4 +450,24 @@ const styles = StyleSheet.create({
     minWidth: 150,
     textAlign: 'center',
   },
+  confirmBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(4,8,14,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  confirmCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    padding: spacing.xl,
+  },
+  confirmTitle: { ...font.h2, marginBottom: spacing.sm },
+  confirmMsg: { ...font.body, color: colors.textMuted },
+  confirmCancel: { alignSelf: 'center', paddingVertical: spacing.md, marginTop: spacing.xs },
+  confirmCancelText: { color: colors.textMuted, fontFamily: ff.bold, fontSize: 15 },
 });

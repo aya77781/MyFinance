@@ -1,4 +1,4 @@
-import Svg, { Path, Circle, Rect, Line, G, Polyline } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Line, G, Polyline, Ellipse } from 'react-native-svg';
 
 // Bibliotheque d'icones lineaires dessinees a la main (aucune librairie, aucun emoji).
 export default function Glyph({ name, color = '#10131A', size = 22, strokeWidth = 1.9 }) {
@@ -197,6 +197,50 @@ export default function Glyph({ name, color = '#10131A', size = 22, strokeWidth 
       return V(
         <Polyline {...p} points="20 6 9 17 4 12" />
       );
+    case 'graduation': // Etudes (toque de diplome)
+      return V(
+        <G {...p}>
+          <Path d="M12 5 L22 9 L12 13 L2 9 Z" />
+          <Path d="M6 11 V15 a6 3 0 0 0 12 0 V11" />
+          <Path d="M22 9 V14.5" />
+          <Circle cx="22" cy="15.5" r="0.9" fill={color} stroke="none" />
+        </G>
+      );
+    case 'coins': // Mini job / petits revenus (pile de pieces)
+      return V(
+        <G {...p}>
+          <Ellipse cx="9" cy="7" rx="5" ry="2.4" />
+          <Path d="M4 7 V11 c0 1.3 2.2 2.4 5 2.4 s5-1.1 5-2.4 V7" />
+          <Ellipse cx="15" cy="13" rx="5" ry="2.4" />
+          <Path d="M10 13 V17 c0 1.3 2.2 2.4 5 2.4 s5-1.1 5-2.4 V13" />
+        </G>
+      );
+    case 'other': // Autre / Divers (grille 2x2 = "divers")
+      return V(
+        <G {...p}>
+          <Rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+          <Rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+          <Rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+          <Rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+        </G>
+      );
+    case 'family': // Family (deux silhouettes : adulte + enfant)
+      return V(
+        <G {...p}>
+          <Circle cx="8" cy="7" r="2.5" />
+          <Path d="M3.5 20 a4.5 4.5 0 0 1 9 0" />
+          <Circle cx="16.5" cy="9" r="2" />
+          <Path d="M13 20 a3.5 3.5 0 0 1 7 0" />
+        </G>
+      );
+    case 'debt': // Dettes (carte de credit)
+      return V(
+        <G {...p}>
+          <Rect x="3" y="6" width="18" height="12" rx="2" />
+          <Line x1="3" y1="10" x2="21" y2="10" />
+          <Line x1="6.5" y1="14.5" x2="11" y2="14.5" />
+        </G>
+      );
     case 'tag':
     default:
       return V(
@@ -226,5 +270,12 @@ export function glyphForCategory(name = '') {
   if (/(tutor|cours|soutien|prof)/.test(n)) return 'book';
   if (/(freelance|mission|indep)/.test(n)) return 'laptop';
   if (/(competition|compétition|concours|tournoi|prix)/.test(n)) return 'trophy';
+  if (/(mini.?job|petit.?boulot|interim|intérim|extra|\bjob\b|prime|bonus|pourboire)/.test(n)) return 'coins';
+  if (/(dividende|interet|intérêt|placement|invest|bourse.*action|rente)/.test(n)) return 'trending';
+  if (/(vente|revente|occasion|leboncoin|vinted)/.test(n)) return 'bag';
+  if (/(etude|étude|ecole|école|scolaire|universit|fac|formation|fourniture)/.test(n)) return 'graduation';
+  if (/(dette|credit|crédit|emprunt|pret|prêt|rembours|mensualit)/.test(n)) return 'debt';
+  if (/(family|famille|enfant|parent|maison.*famille)/.test(n)) return 'family';
+  if (/(autre|other|divers|misc)/.test(n)) return 'other';
   return 'tag';
 }
