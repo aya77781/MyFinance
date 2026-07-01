@@ -5,10 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, spacing, radius, font, ff, brandGradient } from '../theme';
-import { euro, monthLabel } from '../format';
+import { money, monthLabel, currencyForMonth } from '../format';
 import { Dashboard } from '../api';
 import { useAuth } from '../AuthContext';
 import { useProfile } from '../ProfileContext';
+import { useCurrency } from '../CurrencyContext';
+import SettingsSheet from './SettingsScreen';
 import Card from '../components/Card';
 import ActionTile from '../components/ActionTile';
 import GaugeRing from '../components/GaugeRing';
@@ -71,10 +73,13 @@ export default function DashboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { photo } = useProfile();
+  // On s'abonne a la devise : un changement de devise re-rend le dashboard.
+  useCurrency();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   // Mois affiche : null = mois courant (le backend choisit), sinon { year, month }.
   const [sel, setSel] = useState(null);
 
@@ -142,6 +147,8 @@ export default function DashboardScreen({ navigation }) {
 
   const s = data.summary;
   const { year, month } = data.period;
+  // Devise du mois affiche (les mois passes gardent leur devise).
+  const monthCode = currencyForMonth(`${year}-${String(month + 1).padStart(2, '0')}`);
 
   // Navigation entre mois (passes ou futurs, pour preparer les mois a venir).
   const goMonth = (delta) => {
@@ -167,6 +174,7 @@ export default function DashboardScreen({ navigation }) {
     : 0;
 
   return (
+    <>
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
       contentContainerStyle={{ paddingBottom: spacing.xl }}
@@ -191,7 +199,7 @@ export default function DashboardScreen({ navigation }) {
       >
         <View style={styles.topbar}>
           <Pressable
-            onPress={() => navigation.navigate('Budget')}
+            onPress={() => setShowSettings(true)}
             style={({ pressed }) => [styles.avatar, pressed && { opacity: 0.7 }]}
             hitSlop={8}
           >
@@ -201,7 +209,7 @@ export default function DashboardScreen({ navigation }) {
               <Text style={styles.avatarText}>{initials}</Text>
             )}
           </Pressable>
-          <Pressable onPress={() => navigation.navigate('Budget')} style={styles.topBtn} hitSlop={8}>
+          <Pressable onPress={() => setShowSettings(true)} style={styles.topBtn} hitSlop={8}>
             <View style={styles.topBtnDot} />
             <View style={styles.topBtnDot} />
             <View style={styles.topBtnDot} />
@@ -217,7 +225,7 @@ export default function DashboardScreen({ navigation }) {
             colorEnd={isPositive ? colors.primary : colors.negative}
           >
             <Text style={styles.gaugeLabel}>{t('dashboard.netLabel')}</Text>
-            <Balance value={s.net} tone={tone} />
+            <Balance value={s.net} tone={tone} code={monthCode} />
             <View style={[styles.gaugePill, { backgroundColor: isPositive ? colors.primarySoft : 'rgba(255,93,115,0.16)' }]}>
               <Text style={[styles.gaugePillText, { color: tone }]}>
                 {isPositive ? t('dashboard.savedRate', { rate: ratePct }) : t('dashboard.overspent')}
@@ -254,9 +262,9 @@ export default function DashboardScreen({ navigation }) {
       <View style={styles.body}>
         {/* Entrees / sorties */}
         <View style={styles.flowRow}>
-          <Flow label={t('dashboard.income')} value={euro(s.realIncome)} tone={colors.positive} />
+          <Flow label={t('dashboard.income')} value={money(s.realIncome, monthCode)} tone={colors.positive} />
           <View style={styles.flowDivider} />
-          <Flow label={t('dashboard.expensesFlow')} value={euro(s.totalOut)} tone={colors.negative} />
+          <Flow label={t('dashboard.expensesFlow')} value={money(s.totalOut, monthCode)} tone={colors.negative} />
         </View>
 
         {/* Analyses */}
@@ -270,7 +278,7 @@ export default function DashboardScreen({ navigation }) {
                 <DonutChart data={donutData} size={148} strokeWidth={18}>
                   <View style={{ alignItems: 'center' }}>
                     <Text style={font.caption}>{t('dashboard.expenses')}</Text>
-                    <Text style={styles.donutTotal}>{euro(totalExpenses)}</Text>
+                    <Text style={styles.donutTotal}>{money(totalExpenses, monthCode)}</Text>
                   </View>
                 </DonutChart>
                 <View style={styles.legend}>
@@ -313,13 +321,15 @@ export default function DashboardScreen({ navigation }) {
         </Card>
       </View>
     </ScrollView>
+    <SettingsSheet visible={showSettings} onClose={() => { setShowSettings(false); load(); }} />
+    </>
   );
 }
 
 // Solde : partie entiere grande, centimes plus petits (facon Revolut).
 // Affiche au centre de la jauge, colore selon le signe.
-function Balance({ value, tone = '#fff' }) {
-  const formatted = euro(value, { sign: true }); // ex : "+1 234,56 €"
+function Balance({ value, tone = '#fff', code }) {
+  const formatted = money(value, code, { sign: true }); // ex : "+1 234,56 €"
   const [intPart, decPart] = formatted.split(',');
   return (
     <View style={styles.balance}>

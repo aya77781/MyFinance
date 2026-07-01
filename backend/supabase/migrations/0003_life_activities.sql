@@ -15,6 +15,7 @@ create table if not exists public.life_activities (
   user_id    uuid not null references public.users (id) on delete cascade,
   name       text not null default '',
   budget     numeric(14, 2) not null default 0,
+  emoji      text not null default '🎯',
   color      text not null default '#23D3A8',
   drawn      boolean not null default false,
   drawn_at   timestamptz,
@@ -22,6 +23,11 @@ create table if not exists public.life_activities (
   updated_at timestamptz not null default now()
 );
 create index if not exists life_activities_user_idx on public.life_activities (user_id);
+
+-- Emoji affiché seul sur la roue qui tourne. Idempotent : ajoute la colonne
+-- (et cale son défaut) si la table existait déjà sans elle.
+alter table public.life_activities add column if not exists emoji text not null default '🎯';
+alter table public.life_activities alter column emoji set default '🎯';
 
 -- met à jour updated_at automatiquement (fonction définie en 0001)
 drop trigger if exists life_activities_set_updated_at on public.life_activities;

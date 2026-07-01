@@ -27,6 +27,9 @@ registerTranslations({
     'life.fieldName': 'Activite',
     'life.fieldNamePlaceholder': 'Ex : Cinema, Resto, Rando',
     'life.fieldBudget': 'Budget',
+    'life.fieldDetail': 'Detail',
+    'life.fieldDetailPlaceholder': 'Optionnel : lieu, idee, note...',
+    'life.fieldEmoji': 'Emoji (affiche sur la roue)',
     'life.fieldColor': 'Couleur sur la roue',
     'life.nameRequired': "Donne un nom a l'activite.",
     'life.created': 'Activite ajoutee',
@@ -66,6 +69,9 @@ registerTranslations({
     'life.fieldName': 'Activity',
     'life.fieldNamePlaceholder': 'e.g. Cinema, Dinner, Hike',
     'life.fieldBudget': 'Budget',
+    'life.fieldDetail': 'Detail',
+    'life.fieldDetailPlaceholder': 'Optional: place, idea, note...',
+    'life.fieldEmoji': 'Emoji (shown on the wheel)',
     'life.fieldColor': 'Color on the wheel',
     'life.nameRequired': 'Give the activity a name.',
     'life.created': 'Activity added',
@@ -98,6 +104,13 @@ registerTranslations({
     'life.tapToEdit': 'Tap an activity to edit · long-press to delete.',
   },
 });
+
+// Palette d'emojis proposée pour les activités (visible sur la roue).
+const EMOJIS = [
+  '🎬', '🍽️', '🥾', '🏖️', '🎮', '📚', '🎨', '🏋️', '☕', '🛍️',
+  '🎵', '✈️', '🚴', '🎳', '🧘', '🍿', '🎤', '⚽', '🏊', '🌳',
+  '🎉', '🍜', '🎁', '💆', '🐶',
+];
 
 const sameLocalDay = (a, b) => {
   if (!a || !b) return false;
@@ -149,7 +162,11 @@ export default function LifeScreen() {
   const canSpin = !spinning && !drawnToday && remaining.length > 0;
   const totalBudget = items.reduce((s, a) => s + (Number(a.budget) || 0), 0);
 
-  const segments = remaining.map((a) => ({ label: a.name, color: a.color || colors.primary }));
+  const segments = remaining.map((a) => ({
+    emoji: a.emoji,
+    label: a.name,
+    color: a.color || colors.primary,
+  }));
   const wheelSize = Math.min(300, Math.max(220, width - 96));
 
   const spin = () => {
@@ -191,7 +208,8 @@ export default function LifeScreen() {
     await Life.create({
       name: v.name.trim(),
       budget: Number(v.budget) || 0,
-      color: v.color || palette[items.length % palette.length],
+      color: palette[items.length % palette.length],
+      emoji: v.emoji || '🎯',
     });
     toast.success(t('life.created'));
     setCreateSheet(false);
@@ -203,7 +221,7 @@ export default function LifeScreen() {
     await Life.update(editTarget._id, {
       name: v.name.trim(),
       budget: Number(v.budget) || 0,
-      color: v.color || editTarget.color,
+      emoji: v.emoji || '🎯',
     });
     toast.success(t('life.updated'));
     setEditTarget(null);
@@ -229,12 +247,18 @@ export default function LifeScreen() {
     }
   };
 
-  const colorField = {
-    key: 'color',
-    label: t('life.fieldColor'),
-    type: 'select',
-    options: palette.map((c) => ({ label: ' ', value: c, color: c })),
-  };
+  // Formulaire : 3 champs — nom + budget + emoji (l'emoji est ce qui s'affiche
+  // seul sur la roue). La couleur du segment est attribuée automatiquement.
+  const sheetFields = [
+    { key: 'name', label: t('life.fieldName'), type: 'text', placeholder: t('life.fieldNamePlaceholder') },
+    { key: 'budget', label: t('life.fieldBudget'), type: 'number', placeholder: '0' },
+    {
+      key: 'emoji',
+      label: t('life.fieldEmoji'),
+      type: 'select',
+      options: EMOJIS.map((e) => ({ label: e, value: e })),
+    },
+  ];
 
   return (
     <>
@@ -254,11 +278,12 @@ export default function LifeScreen() {
             <>
               <Text style={styles.heroLabel}>{t('life.todayTitle')}</Text>
               <View style={styles.todayRow}>
-                <View style={[styles.dot, { backgroundColor: lastDraw.color || colors.primary }]} />
+                <Text style={styles.todayEmoji}>{lastDraw.emoji || '🎯'}</Text>
                 <Text style={styles.todayName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
                   {lastDraw.name}
                 </Text>
               </View>
+              {lastDraw.detail ? <Text style={styles.todayDetail}>{lastDraw.detail}</Text> : null}
               <Text style={styles.todayBudget}>{euro(lastDraw.budget)}</Text>
             </>
           ) : items.length === 0 ? (
@@ -361,12 +386,8 @@ export default function LifeScreen() {
       <FormSheet
         visible={createSheet}
         title={t('life.add')}
-        fields={[
-          { key: 'name', label: t('life.fieldName'), type: 'text', placeholder: t('life.fieldNamePlaceholder') },
-          { key: 'budget', label: t('life.fieldBudget'), type: 'number', placeholder: '0' },
-          colorField,
-        ]}
-        initial={{ color: palette[items.length % palette.length] }}
+        fields={sheetFields}
+        initial={{ emoji: EMOJIS[items.length % EMOJIS.length] }}
         submitLabel={t('common.add')}
         onSubmit={create}
         onClose={() => setCreateSheet(false)}
@@ -375,17 +396,13 @@ export default function LifeScreen() {
       <FormSheet
         visible={!!editTarget}
         title={t('life.edit')}
-        fields={[
-          { key: 'name', label: t('life.fieldName'), type: 'text', placeholder: t('life.fieldNamePlaceholder') },
-          { key: 'budget', label: t('life.fieldBudget'), type: 'number', placeholder: '0' },
-          colorField,
-        ]}
+        fields={sheetFields}
         initial={
           editTarget
             ? {
                 name: editTarget.name || '',
                 budget: editTarget.budget != null ? String(editTarget.budget) : '',
-                color: editTarget.color || palette[0],
+                emoji: editTarget.emoji || EMOJIS[0],
               }
             : {}
         }
@@ -410,11 +427,16 @@ function ActivityRow({ item, drawn, last, onPress, onLongPress }) {
         pressed && { opacity: 0.6 },
       ]}
     >
-      <View style={[styles.dot, { backgroundColor: item.color || colors.primary, opacity: drawn ? 0.45 : 1 }]} />
+      <View style={[styles.badge, { backgroundColor: item.color || colors.primary, opacity: drawn ? 0.45 : 1 }]}>
+        <Text style={styles.badgeEmoji}>{item.emoji || item.name?.[0]?.toUpperCase() || '?'}</Text>
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowName, drawn && styles.rowNameDrawn]} numberOfLines={1}>
           {item.name}
         </Text>
+        {item.detail ? (
+          <Text style={styles.rowDetail} numberOfLines={1}>{item.detail}</Text>
+        ) : null}
         {drawn && item.drawnAt ? (
           <Text style={styles.rowDate}>{shortDate(item.drawnAt)}</Text>
         ) : null}
@@ -430,7 +452,9 @@ const styles = {
   heroText: { color: colors.textOnBrandMuted, fontSize: 14, fontFamily: ff.medium, marginTop: 6 },
   heroBudget: { color: colors.primary, fontSize: 13, fontFamily: ff.bold, marginTop: spacing.md },
   todayRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  todayEmoji: { fontSize: 34, marginRight: spacing.md },
   todayName: { color: '#fff', fontFamily: ff.extrabold, fontSize: 30, letterSpacing: -0.8, flex: 1 },
+  todayDetail: { color: colors.textOnBrandMuted, fontSize: 14, fontFamily: ff.medium, marginTop: 6 },
   todayBudget: { color: colors.primary, fontSize: 16, fontFamily: ff.bold, marginTop: 4 },
   lockHint: { ...font.caption, textAlign: 'center', marginTop: spacing.md, maxWidth: 280 },
   tapHint: { ...font.caption, marginBottom: spacing.sm },
@@ -443,8 +467,18 @@ const styles = {
   },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   dot: { width: 14, height: 14, borderRadius: 7, marginRight: spacing.md },
+  badge: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  badgeEmoji: { fontSize: 18, color: '#08221C', fontFamily: ff.bold },
   rowName: { fontFamily: ff.semibold, fontSize: 15, color: colors.text },
   rowNameDrawn: { color: colors.textMuted, textDecorationLine: 'line-through' },
+  rowDetail: { ...font.caption, marginTop: 1 },
   rowDate: { ...font.caption, marginTop: 1 },
   rowBudget: { fontFamily: ff.bold, fontSize: 15, color: colors.text, marginLeft: spacing.sm },
 };

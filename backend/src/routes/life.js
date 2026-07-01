@@ -19,7 +19,7 @@ router.get('/', async (req, res, next) => {
 // Ajouter une activité (nom + budget + couleur du segment).
 router.post('/', async (req, res, next) => {
   try {
-    const { name, budget, color } = req.body;
+    const { name, budget, color, emoji, detail } = req.body;
     if (!name || !String(name).trim()) {
       return res.status(400).json({ error: "Donne un nom a l'activite." });
     }
@@ -28,6 +28,8 @@ router.post('/', async (req, res, next) => {
       name: String(name).trim(),
       budget: Number(budget) || 0,
       color: color || '#23D3A8',
+      emoji: emoji || '',
+      detail: detail ? String(detail).trim() : '',
       drawn: false,
       drawnAt: null,
     });
@@ -40,7 +42,7 @@ router.post('/', async (req, res, next) => {
 // Modifier une activité (nom / budget / couleur).
 router.put('/:id', async (req, res, next) => {
   try {
-    const { name, budget, color } = req.body;
+    const { name, budget, color, emoji, detail } = req.body;
     const patch = {};
     if (name !== undefined) {
       if (!String(name).trim()) return res.status(400).json({ error: "Donne un nom a l'activite." });
@@ -48,6 +50,8 @@ router.put('/:id', async (req, res, next) => {
     }
     if (budget !== undefined) patch.budget = Number(budget) || 0;
     if (color !== undefined) patch.color = color;
+    if (emoji !== undefined) patch.emoji = emoji || '';
+    if (detail !== undefined) patch.detail = detail ? String(detail).trim() : '';
     const item = await Life.update({ _id: req.params.id, user: req.userId }, patch);
     if (!item) return res.status(404).json({ error: 'Activite introuvable' });
     res.json(item);

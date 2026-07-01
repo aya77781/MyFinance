@@ -1,10 +1,11 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { Animated, Easing, Platform, View } from 'react-native';
 import Svg, { G, Path, Circle, Polygon, Text as SvgText } from 'react-native-svg';
-import { colors, ff } from '../theme';
+import { colors } from '../theme';
 
 // Roue de la fortune colorée, 100 % SVG + Animated (aucune dépendance native).
-// - `segments` : [{ label, color }] (un segment par activité restante).
+// - `segments` : [{ emoji, label, color }] (un segment par activité restante).
+//   Seul l'emoji est affiché sur la roue (fallback : 1re lettre du nom).
 // - via la ref : `spinTo(index, onEnd)` fait tourner la roue jusqu'à ce que le
 //   segment `index` s'arrête sous le pointeur (en haut), puis appelle `onEnd`.
 //
@@ -18,9 +19,11 @@ function pointOnCircle(cx, cy, r, angleDeg) {
   return { x: cx + r * Math.sin(a), y: cy - r * Math.cos(a) };
 }
 
-function truncate(s = '', max = 12) {
-  const str = String(s);
-  return str.length > max ? str.slice(0, max - 1) + '…' : str;
+// Contenu affiché sur un segment : l'emoji choisi, sinon la 1re lettre du nom.
+function segGlyph(s = {}) {
+  if (s.emoji) return s.emoji;
+  const name = String(s.label || '').trim();
+  return name ? name[0].toUpperCase() : '?';
 }
 
 const Wheel = forwardRef(function Wheel({ segments = [], size = 280 }, ref) {
@@ -72,13 +75,12 @@ const Wheel = forwardRef(function Wheel({ segments = [], size = 280 }, ref) {
               <Circle cx={cx} cy={cy} r={r} fill={segments[0].color} />
               <SvgText
                 x={cx}
-                y={cy - r * 0.55}
-                fill="#08221C"
-                fontSize={15}
-                fontFamily={ff.bold}
+                y={cy - r * 0.42}
+                fontSize={40}
                 textAnchor="middle"
+                alignmentBaseline="central"
               >
-                {truncate(segments[0].label)}
+                {segGlyph(segments[0])}
               </SvgText>
             </>
           ) : (
@@ -90,19 +92,19 @@ const Wheel = forwardRef(function Wheel({ segments = [], size = 280 }, ref) {
               const largeArc = seg > 180 ? 1 : 0;
               const d = `M ${cx} ${cy} L ${p0.x} ${p0.y} A ${r} ${r} 0 ${largeArc} 1 ${p1.x} ${p1.y} Z`;
               const mid = a0 + seg / 2;
-              const label = pointOnCircle(cx, cy, r * 0.62, mid);
+              const label = pointOnCircle(cx, cy, r * 0.66, mid);
+              const emojiSize = n > 10 ? 18 : n > 6 ? 24 : 30;
               return (
                 <G key={i}>
                   <Path d={d} fill={s.color} stroke="rgba(8,16,28,0.45)" strokeWidth={2} />
                   <SvgText
                     x={label.x}
-                    y={label.y + 4}
-                    fill="#08221C"
-                    fontSize={n > 8 ? 10 : 12.5}
-                    fontFamily={ff.bold}
+                    y={label.y}
+                    fontSize={emojiSize}
                     textAnchor="middle"
+                    alignmentBaseline="central"
                   >
-                    {truncate(s.label, n > 8 ? 8 : 12)}
+                    {segGlyph(s)}
                   </SvgText>
                 </G>
               );

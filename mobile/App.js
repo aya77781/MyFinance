@@ -17,6 +17,7 @@ import Tabs from './src/navigation/Tabs';
 import AuthScreen from './src/screens/AuthScreen';
 import { AuthProvider, useAuth } from './src/AuthContext';
 import { ProfileProvider } from './src/ProfileContext';
+import { CurrencyProvider } from './src/CurrencyContext';
 import { ToastProvider } from './src/components/Toast';
 import { LanguageProvider } from './src/i18n';
 import { colors, ff } from './src/theme';
@@ -105,7 +106,9 @@ export default function App() {
           <LanguageProvider>
             <AuthProvider>
               <ProfileProvider>
-                <Root />
+                <CurrencyProvider>
+                  <Root />
+                </CurrencyProvider>
               </ProfileProvider>
             </AuthProvider>
           </LanguageProvider>

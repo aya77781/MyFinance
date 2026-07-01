@@ -13,8 +13,9 @@ import Glyph from '../components/Glyph';
 import { SkeletonCard } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { colors, spacing, font, radius, palette, ff } from '../theme';
-import { euro, shortDate, dateInput, parseDateInput } from '../format';
+import { euro, moneyForDate, shortDate, dateInput, parseDateInput, convertAmount, currencyForDate, currentCurrency } from '../format';
 import { Savings } from '../api';
+import { useCurrency } from '../CurrencyContext';
 import { confirmAction } from '../confirm';
 import { useT, registerTranslations } from '../i18n';
 
@@ -106,6 +107,7 @@ registerTranslations({
 export default function SavingsScreen() {
   const t = useT();
   const toast = useToast();
+  useCurrency(); // re-rend l'ecran quand la devise par defaut change
   const [items, setItems] = useState([]);
   const [loaded, setLoaded] = useState(false); // evite le flash d'etat vide au 1er chargement
   const [refreshing, setRefreshing] = useState(false);
@@ -132,7 +134,15 @@ export default function SavingsScreen() {
     }, [load])
   );
 
-  const total = items.reduce((s, v) => s + v.currentAmount, 0);
+  // Un objectif s'etale dans le temps : chaque versement est converti depuis la
+  // devise de son mois vers la devise par defaut actuelle (taux fixe 10 MAD = 1 $ = 1 €).
+  const cur = currentCurrency();
+  const convertedCurrent = (item) => {
+    const list = item.contributions || [];
+    if (!list.length) return convertAmount(item.currentAmount || 0, 'EUR', cur);
+    return list.reduce((s, c) => s + convertAmount(c.amount, currencyForDate(c.date), cur), 0);
+  };
+  const total = items.reduce((s, v) => s + convertedCurrent(v), 0);
 
   // create / contribute passent par FormSheet : en cas d'erreur reseau,
   // l'exception remonte et FormSheet l'affiche (toast) sans fermer la feuille.
@@ -254,7 +264,7 @@ export default function SavingsScreen() {
             <GoalCard
               key={item._id}
               title={item.name}
-              current={item.currentAmount}
+              current={convertedCurrent(item)}
               target={item.targetAmount}
               color={item.color}
               onAdd={() => setContribTarget(item)}
@@ -411,7 +421,7 @@ function ContributionHistory({ t, contributions, onEdit }) {
                 <Text style={styles.contribDate}>{shortDate(c.date)}</Text>
               </View>
               <Text style={[styles.contribAmount, { color: positive ? colors.positive : colors.negative }]}>
-                {euro(c.amount, { sign: true })}
+                {moneyForDate(c.amount, c.date, { sign: true })}
               </Text>
             </Pressable>
           );

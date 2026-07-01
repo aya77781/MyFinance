@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, spacing, font, ff } from '../theme';
-import { euro, shortDate } from '../format';
+import { moneyForDate, shortDate } from '../format';
 import CategoryIcon from './CategoryIcon';
 import { useT, registerTranslations } from '../i18n';
 
@@ -39,7 +39,7 @@ export default function TransactionRow({ tx, onPress, onLongPress }) {
         style={[styles.amount, { color: isIncome ? colors.positive : colors.text }]}
         numberOfLines={1}
       >
-        {euro(isIncome ? tx.amount : -tx.amount, { sign: true })}
+        {moneyForDate(isIncome ? tx.amount : -tx.amount, tx.date, { sign: true })}
       </Text>
     </Pressable>
   );
