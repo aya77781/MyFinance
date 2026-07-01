@@ -10,7 +10,7 @@ import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
 import EmptyState from '../components/EmptyState';
 import { colors, spacing, radius, ff } from '../theme';
-import { euro, dateInput, parseDateInput, shortDate } from '../format';
+import { euro, dateInput, parseDateInput, shortDate, toDisplay, fromDisplay } from '../format';
 import { Opportunities } from '../api';
 import { useT, registerTranslations } from '../i18n';
 
@@ -172,9 +172,9 @@ export default function OpportunitiesScreen() {
     return {
       title: v.title,
       description: v.description || '',
-      amount: Number(v.amount) || 0,
+      amount: fromDisplay(Number(v.amount) || 0),
       status,
-      result: signedResult(status, v.result),
+      result: fromDisplay(signedResult(status, v.result)),
       date,
       closedAt,
       paidAt,
@@ -426,9 +426,9 @@ export default function OpportunitiesScreen() {
             ? {
                 title: editTarget.title,
                 description: editTarget.description,
-                amount: editTarget.amount,
+                amount: toDisplay(editTarget.amount),
                 status: editTarget.status,
-                result: editTarget.resultMag,
+                result: toDisplay(editTarget.resultMag),
                 date: dateInput(editTarget.date || editTarget.createdAt),
                 closedDate: editTarget.closedAt ? dateInput(editTarget.closedAt) : '',
                 paidDate: editTarget.paidAt ? dateInput(editTarget.paidAt) : '',

@@ -121,6 +121,41 @@ export default function FormSheet({
                         })}
                       </View>
                     </ScrollView>
+                  ) : f.type === 'emoji' ? (
+                    <View>
+                      {/* Saisie libre : l'utilisateur tape/colle l'emoji de son choix. */}
+                      <TextInput
+                        value={values[f.key] != null ? String(values[f.key]) : ''}
+                        onChangeText={(txt) => set(f.key, txt)}
+                        placeholder={f.placeholder || '🙂'}
+                        placeholderTextColor={colors.textMuted}
+                        style={[styles.input, styles.emojiInput]}
+                        maxLength={8}
+                      />
+                      {Array.isArray(f.options) && f.options.length ? (
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          keyboardShouldPersistTaps="handled"
+                          style={{ marginTop: spacing.sm }}
+                        >
+                          <View style={styles.emojiPalette}>
+                            {f.options.map((e) => {
+                              const active = values[f.key] === e;
+                              return (
+                                <Pressable
+                                  key={e}
+                                  onPress={() => set(f.key, e)}
+                                  style={[styles.emojiChip, active && styles.emojiChipActive]}
+                                >
+                                  <Text style={styles.emojiChipText}>{e}</Text>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                        </ScrollView>
+                      ) : null}
+                    </View>
                   ) : (
                     <TextInput
                       value={values[f.key] != null ? String(values[f.key]) : ''}
@@ -205,6 +240,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  emojiInput: { fontSize: 26, textAlign: 'center', letterSpacing: 2 },
+  emojiPalette: { flexDirection: 'row', gap: spacing.sm, paddingVertical: 2 },
+  emojiChip: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emojiChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  emojiChipText: { fontSize: 22 },
   options: { flexDirection: 'row', gap: spacing.sm, paddingVertical: 2 },
   option: {
     flexDirection: 'row',

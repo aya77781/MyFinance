@@ -13,7 +13,7 @@ import Wheel from '../components/Wheel';
 import { SkeletonCard } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { colors, spacing, font, radius, palette, ff } from '../theme';
-import { euro, shortDate } from '../format';
+import { euro, shortDate, toDisplay, fromDisplay } from '../format';
 import { Life } from '../api';
 import { confirmAction } from '../confirm';
 import { useT, registerTranslations } from '../i18n';
@@ -29,7 +29,7 @@ registerTranslations({
     'life.fieldBudget': 'Budget',
     'life.fieldDetail': 'Detail',
     'life.fieldDetailPlaceholder': 'Optionnel : lieu, idee, note...',
-    'life.fieldEmoji': 'Emoji (affiche sur la roue)',
+    'life.fieldEmoji': 'Emoji (tape le tien ou choisis)',
     'life.fieldColor': 'Couleur sur la roue',
     'life.nameRequired': "Donne un nom a l'activite.",
     'life.created': 'Activite ajoutee',
@@ -71,7 +71,7 @@ registerTranslations({
     'life.fieldBudget': 'Budget',
     'life.fieldDetail': 'Detail',
     'life.fieldDetailPlaceholder': 'Optional: place, idea, note...',
-    'life.fieldEmoji': 'Emoji (shown on the wheel)',
+    'life.fieldEmoji': 'Emoji (type your own or pick)',
     'life.fieldColor': 'Color on the wheel',
     'life.nameRequired': 'Give the activity a name.',
     'life.created': 'Activity added',
@@ -207,7 +207,7 @@ export default function LifeScreen() {
     if (!v.name?.trim()) throw new Error(t('life.nameRequired'));
     await Life.create({
       name: v.name.trim(),
-      budget: Number(v.budget) || 0,
+      budget: fromDisplay(Number(v.budget) || 0),
       color: palette[items.length % palette.length],
       emoji: v.emoji || '🎯',
     });
@@ -220,7 +220,7 @@ export default function LifeScreen() {
     if (!v.name?.trim()) throw new Error(t('life.nameRequired'));
     await Life.update(editTarget._id, {
       name: v.name.trim(),
-      budget: Number(v.budget) || 0,
+      budget: fromDisplay(Number(v.budget) || 0),
       emoji: v.emoji || '🎯',
     });
     toast.success(t('life.updated'));
@@ -255,8 +255,9 @@ export default function LifeScreen() {
     {
       key: 'emoji',
       label: t('life.fieldEmoji'),
-      type: 'select',
-      options: EMOJIS.map((e) => ({ label: e, value: e })),
+      type: 'emoji',
+      options: EMOJIS,
+      placeholder: '🙂',
     },
   ];
 
@@ -401,7 +402,7 @@ export default function LifeScreen() {
           editTarget
             ? {
                 name: editTarget.name || '',
-                budget: editTarget.budget != null ? String(editTarget.budget) : '',
+                budget: editTarget.budget != null ? String(toDisplay(editTarget.budget)) : '',
                 emoji: editTarget.emoji || EMOJIS[0],
               }
             : {}

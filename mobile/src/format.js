@@ -10,46 +10,23 @@ export function getLocale() {
 }
 
 // --- Devises -----------------------------------------------------------------
-// L'utilisateur choisit une devise par defaut qui s'applique A PARTIR d'un mois
-// donne (sans modifier les mois passes). On stocke donc une liste d'"epoques" :
-//   [{ from: 'YYYY-MM', code: 'EUR' }, { from: '2026-07', code: 'MAD' }]
-// La devise d'un mois = l'epoque la plus recente dont `from` <= ce mois.
-// Avant toute epoque : EUR (devise historique de l'app).
+// L'app stocke TOUS les montants dans une devise de base (l'euro). L'utilisateur
+// choisit une devise d'AFFICHAGE (€, $ ou MAD) : les montants sont convertis a
+// l'affichage (ex. 100 € -> 1000 MAD) et reconvertis vers l'euro a la saisie.
+// Taux fixe demande : 1 € = 1 $ = 10 MAD.
 export const CURRENCY_CODES = ['EUR', 'USD', 'MAD'];
+export const BASE_CURRENCY = 'EUR';
 
-// Taux fixe demande : 10 MAD = 1 $ = 1 € (le $ et le € sont a parite).
-// On exprime chaque devise en "base EUR" : 1 unite vaut RATE[code] euros.
+// 1 unite de la devise vaut RATE[code] euros (donc MAD = 0,1 € -> 10 MAD = 1 €).
 const RATE = { EUR: 1, USD: 1, MAD: 0.1 };
 
-// Epoques de devise, triees par `from` croissant. Pilotees par le CurrencyProvider.
-let EPOCHS = [];
-export function setCurrencyEpochs(epochs = []) {
-  EPOCHS = [...epochs].filter((e) => e && e.from && e.code).sort((a, b) => (a.from < b.from ? -1 : 1));
+// Devise d'affichage courante. Pilotee par le CurrencyProvider.
+let DISPLAY = 'EUR';
+export function setDisplayCurrency(code) {
+  DISPLAY = CURRENCY_CODES.includes(code) ? code : 'EUR';
 }
-
-// Cle 'YYYY-MM' d'une date.
-export function monthKey(d = new Date()) {
-  const dt = d instanceof Date ? d : new Date(d);
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
-}
-
-// Devise applicable a un mois ('YYYY-MM').
-export function currencyForMonth(ym) {
-  let code = 'EUR';
-  for (const e of EPOCHS) {
-    if (e.from <= ym) code = e.code;
-    else break;
-  }
-  return CURRENCY_CODES.includes(code) ? code : 'EUR';
-}
-
-export function currencyForDate(d = new Date()) {
-  return currencyForMonth(monthKey(d));
-}
-
-// Devise "par defaut" active aujourd'hui (celle du mois courant).
-export function currentCurrency() {
-  return currencyForDate(new Date());
+export function displayCurrency() {
+  return DISPLAY;
 }
 
 // Convertit un montant d'une devise vers une autre (taux fixe ci-dessus).
@@ -60,8 +37,17 @@ export function convertAmount(amount, from, to) {
   return (n * rFrom) / rTo;
 }
 
-// Formate un montant dans une devise donnee.
-export function money(value, code = currentCurrency(), { sign = false } = {}) {
+// euro (base) -> devise d'affichage (pour montrer un montant stocke).
+export function toDisplay(baseEur) {
+  return convertAmount(baseEur, BASE_CURRENCY, DISPLAY);
+}
+// montant saisi dans la devise d'affichage -> euro (base) pour le stockage.
+export function fromDisplay(shown) {
+  return convertAmount(shown, DISPLAY, BASE_CURRENCY);
+}
+
+// Formate un montant DEJA exprime dans une devise donnee (sans conversion).
+export function money(value, code = DISPLAY, { sign = false } = {}) {
   const n = Number(value) || 0;
   const cur = CURRENCY_CODES.includes(code) ? code : 'EUR';
   const formatted = new Intl.NumberFormat(LOCALE, {
@@ -75,16 +61,16 @@ export function money(value, code = currentCurrency(), { sign = false } = {}) {
   return n < 0 ? `-${formatted}` : formatted;
 }
 
-// Formate dans la devise du mois de la date fournie (pas de conversion : chaque
-// mois garde sa devise d'origine).
-export function moneyForDate(value, date, opts) {
-  return money(value, currencyForDate(date), opts);
+// `euro(x)` : x est en euro (base). On le convertit vers la devise d'affichage
+// puis on le formate. Tous les ecrans qui l'appelaient suivent donc la devise.
+export function euro(value, opts) {
+  return money(toDisplay(value), DISPLAY, opts);
 }
 
-// Compat historique : `euro()` formate desormais dans la devise par defaut
-// active (mois courant). Tous les ecrans qui l'appelaient suivent la devise.
-export function euro(value, opts) {
-  return money(value, currentCurrency(), opts);
+// Alias historique : formatage direct dans la devise d'affichage (la date n'est
+// plus utilisee — conservee pour compat d'appel).
+export function moneyForDate(value, _date, opts) {
+  return euro(value, opts);
 }
 
 export function shortDate(d) {

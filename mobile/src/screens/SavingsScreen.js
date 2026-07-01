@@ -13,7 +13,7 @@ import Glyph from '../components/Glyph';
 import { SkeletonCard } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { colors, spacing, font, radius, palette, ff } from '../theme';
-import { euro, moneyForDate, shortDate, dateInput, parseDateInput, convertAmount, currencyForDate, currentCurrency } from '../format';
+import { euro, moneyForDate, shortDate, dateInput, parseDateInput, toDisplay, fromDisplay } from '../format';
 import { Savings } from '../api';
 import { useCurrency } from '../CurrencyContext';
 import { confirmAction } from '../confirm';
@@ -134,15 +134,8 @@ export default function SavingsScreen() {
     }, [load])
   );
 
-  // Un objectif s'etale dans le temps : chaque versement est converti depuis la
-  // devise de son mois vers la devise par defaut actuelle (taux fixe 10 MAD = 1 $ = 1 €).
-  const cur = currentCurrency();
-  const convertedCurrent = (item) => {
-    const list = item.contributions || [];
-    if (!list.length) return convertAmount(item.currentAmount || 0, 'EUR', cur);
-    return list.reduce((s, c) => s + convertAmount(c.amount, currencyForDate(c.date), cur), 0);
-  };
-  const total = items.reduce((s, v) => s + convertedCurrent(v), 0);
+  // Montants stockes en euro (base) ; euro() convertit vers la devise d'affichage.
+  const total = items.reduce((s, v) => s + (v.currentAmount || 0), 0);
 
   // create / contribute passent par FormSheet : en cas d'erreur reseau,
   // l'exception remonte et FormSheet l'affiche (toast) sans fermer la feuille.
@@ -150,7 +143,7 @@ export default function SavingsScreen() {
     if (!v.name?.trim()) throw new Error(t('savings.nameRequired'));
     await Savings.create({
       name: v.name.trim(),
-      targetAmount: Number(v.target) || 0,
+      targetAmount: fromDisplay(Number(v.target) || 0),
       color: v.color || palette[0],
     });
     toast.success(t('savings.created'));
@@ -159,7 +152,7 @@ export default function SavingsScreen() {
 
   const contribute = async (v) => {
     if (!Number(v.amount)) throw new Error(t('savings.amountRequired'));
-    const payload = { amount: Number(v.amount), note: v.note || '' };
+    const payload = { amount: fromDisplay(Number(v.amount)), note: v.note || '' };
     const iso = parseDateInput(v.date);
     if (iso) payload.date = iso;
     await Savings.contribute(contribTarget._id, payload);
@@ -171,7 +164,7 @@ export default function SavingsScreen() {
   // Modification d'un versement existant (montant / date / note).
   const saveContrib = async (v) => {
     if (!Number(v.amount)) throw new Error(t('savings.amountRequired'));
-    const payload = { amount: Number(v.amount), note: v.note || '' };
+    const payload = { amount: fromDisplay(Number(v.amount)), note: v.note || '' };
     const iso = parseDateInput(v.date);
     if (iso) payload.date = iso;
     await Savings.updateContribution(editContrib.saving._id, editContrib.contribution._id, payload);
@@ -204,7 +197,7 @@ export default function SavingsScreen() {
     if (!v.name?.trim()) throw new Error(t('savings.nameRequired'));
     await Savings.update(editTarget._id, {
       name: v.name.trim(),
-      targetAmount: Number(v.target) || 0,
+      targetAmount: fromDisplay(Number(v.target) || 0),
       color: v.color || editTarget.color || palette[0],
     });
     toast.success(t('savings.updated'));
@@ -264,7 +257,7 @@ export default function SavingsScreen() {
             <GoalCard
               key={item._id}
               title={item.name}
-              current={convertedCurrent(item)}
+              current={item.currentAmount}
               target={item.targetAmount}
               color={item.color}
               onAdd={() => setContribTarget(item)}
@@ -347,7 +340,7 @@ export default function SavingsScreen() {
         initial={
           editContrib
             ? {
-                amount: String(editContrib.contribution.amount),
+                amount: String(toDisplay(editContrib.contribution.amount)),
                 date: dateInput(editContrib.contribution.date),
                 note: editContrib.contribution.note || '',
               }
@@ -379,7 +372,7 @@ export default function SavingsScreen() {
           editTarget
             ? {
                 name: editTarget.name || '',
-                target: editTarget.targetAmount != null ? String(editTarget.targetAmount) : '',
+                target: editTarget.targetAmount != null ? String(toDisplay(editTarget.targetAmount)) : '',
                 color: editTarget.color || palette[0],
               }
             : {}

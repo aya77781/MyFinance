@@ -1,21 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { getItem, setItem } from './storage';
-import {
-  setCurrencyEpochs,
-  currencyForMonth,
-  currentCurrency,
-  convertAmount,
-  money,
-  monthKey,
-  CURRENCY_CODES,
-} from './format';
+import { setDisplayCurrency, displayCurrency, CURRENCY_CODES } from './format';
 
-// Devise par defaut choisie par l'utilisateur, applicable A PARTIR d'un mois
-// (sans toucher aux mois passes). On persiste la liste des "epoques" localement
-// (comme la langue) : c'est une preference d'affichage, pas une donnee metier.
-const CURRENCY_KEY = 'app_currency_epochs';
+// Devise d'AFFICHAGE choisie par l'utilisateur. Les montants sont stockes en
+// euro (base) et convertis a l'affichage / a la saisie (taux fixe 1 € = 10 MAD).
+// Preference locale (comme la langue).
+const CURRENCY_KEY = 'app_currency';
 
-// Libelles proposes dans les reglages.
 export const CURRENCIES = [
   { code: 'EUR', label: 'Euro', symbol: '€' },
   { code: 'USD', label: 'Dollar', symbol: '$' },
@@ -25,59 +16,36 @@ export const CURRENCIES = [
 const CurrencyCtx = createContext(null);
 
 export function CurrencyProvider({ children }) {
-  const [epochs, setEpochs] = useState([]);
+  const [code, setCode] = useState('EUR');
   const [ready, setReady] = useState(false);
 
-  // Charge les epoques au demarrage et alimente le module format.js.
   useEffect(() => {
     (async () => {
-      let saved = [];
+      let saved = 'EUR';
       try {
         const raw = await getItem(CURRENCY_KEY);
-        if (raw) saved = JSON.parse(raw);
+        if (raw && CURRENCY_CODES.includes(raw)) saved = raw;
       } catch {
-        saved = [];
+        saved = 'EUR';
       }
-      if (!Array.isArray(saved)) saved = [];
-      setCurrencyEpochs(saved);
-      setEpochs(saved);
+      setDisplayCurrency(saved);
+      setCode(saved);
       setReady(true);
     })();
   }, []);
 
-  // Change la devise par defaut A PARTIR du mois courant (upsert d'une epoque).
-  const setFromNow = useCallback(
-    async (code) => {
-      if (!CURRENCY_CODES.includes(code)) return;
-      const ym = monthKey(new Date());
-      const next = [...epochs.filter((e) => e.from !== ym), { from: ym, code }].sort((a, b) =>
-        a.from < b.from ? -1 : 1
-      );
-      setCurrencyEpochs(next);
-      setEpochs(next);
-      try {
-        await setItem(CURRENCY_KEY, JSON.stringify(next));
-      } catch {
-        // non bloquant
-      }
-    },
-    [epochs]
-  );
+  const setCurrency = useCallback(async (next) => {
+    if (!CURRENCY_CODES.includes(next)) return;
+    setDisplayCurrency(next);
+    setCode(next);
+    try {
+      await setItem(CURRENCY_KEY, next);
+    } catch {
+      // non bloquant
+    }
+  }, []);
 
-  const value = useMemo(
-    () => ({
-      ready,
-      epochs,
-      code: currentCurrency(), // devise active (mois courant)
-      setFromNow,
-      codeForMonth: currencyForMonth,
-      convert: convertAmount,
-      format: money,
-    }),
-    // `epochs` en dep : `code`/helpers relisent le module format.js deja synchronise.
-    [ready, epochs, setFromNow]
-  );
-
+  const value = useMemo(() => ({ ready, code, setCurrency }), [ready, code, setCurrency]);
   return <CurrencyCtx.Provider value={value}>{children}</CurrencyCtx.Provider>;
 }
 

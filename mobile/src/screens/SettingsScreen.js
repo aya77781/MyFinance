@@ -26,15 +26,15 @@ import { useT, registerTranslations, useLang, LANGUAGES } from '../i18n';
 registerTranslations({
   fr: {
     'settings.title': 'Reglages',
-    'settings.currency': 'Devise par defaut',
+    'settings.currency': "Devise d'affichage",
     'settings.currencyHint':
-      'Applique a partir de {month} (les mois precedents gardent leur devise). Taux fixe : 10 MAD = 1 $ = 1 €.',
+      'Tous les montants sont convertis dans cette devise. Taux fixe : 1 € = 1 $ = 10 MAD.',
   },
   en: {
     'settings.title': 'Settings',
-    'settings.currency': 'Default currency',
+    'settings.currency': 'Display currency',
     'settings.currencyHint':
-      'Applies from {month} onward (previous months keep their currency). Fixed rate: 10 MAD = 1 $ = 1 €.',
+      'All amounts are converted to this currency. Fixed rate: 1 € = 1 $ = 10 MAD.',
   },
 });
 
@@ -46,7 +46,7 @@ export default function SettingsSheet({ visible, onClose }) {
   const { lang, setLang } = useLang();
   const { photo, pickPhoto, removePhoto } = useProfile();
   const { user, logout } = useAuth();
-  const { code: currencyCode, setFromNow } = useCurrency();
+  const { code: currencyCode, setCurrency } = useCurrency();
 
   const [income, setIncome] = useState([]);
   const [charges, setCharges] = useState([]);
@@ -206,7 +206,7 @@ export default function SettingsSheet({ visible, onClose }) {
                 return (
                   <Pressable
                     key={c.code}
-                    onPress={() => setFromNow(c.code)}
+                    onPress={() => setCurrency(c.code)}
                     style={[styles.currencyBtn, active && styles.currencyBtnActive]}
                   >
                     <Text style={[styles.currencySymbol, active && styles.currencyTextActive]}>{c.symbol}</Text>

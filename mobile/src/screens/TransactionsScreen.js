@@ -14,7 +14,7 @@ import { useToast } from '../components/Toast';
 import { colors, spacing, font, ff } from '../theme';
 import { Transactions, Categories } from '../api';
 import { glyphForCategory } from '../components/Glyph';
-import { dateInput, parseDateInput, getLocale, monthLabel } from '../format';
+import { dateInput, parseDateInput, getLocale, monthLabel, toDisplay, fromDisplay } from '../format';
 import { useT, registerTranslations } from '../i18n';
 
 registerTranslations({
@@ -182,7 +182,7 @@ export default function TransactionsScreen() {
       : '';
     const payload = {
       type: v.type || 'expense',
-      amount: Number(v.amount),
+      amount: fromDisplay(Number(v.amount)),
       category: isIncome ? null : v.category || null,
       note: v.note || '',
       source,
@@ -228,7 +228,7 @@ export default function TransactionsScreen() {
         const isIncome = editing.type === 'income';
         const base = {
           type: editing.type,
-          amount: String(editing.amount),
+          amount: String(toDisplay(editing.amount)),
           note: editing.note || '',
           date: dateInput(editing.date),
         };

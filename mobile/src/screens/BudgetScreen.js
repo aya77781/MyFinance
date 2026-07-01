@@ -13,7 +13,7 @@ import { glyphForCategory } from '../components/Glyph';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import { colors, spacing, font, radius, palette, ff } from '../theme';
-import { euro, getLocale } from '../format';
+import { euro, getLocale, toDisplay, fromDisplay } from '../format';
 import { Income, Charges, Categories, Transactions } from '../api';
 import Button from '../components/Button';
 import { useAuth } from '../AuthContext';
@@ -310,7 +310,7 @@ export default function BudgetScreen() {
     if (sheet === 'income') {
       const payload = {
         name: v.name,
-        amount: Number(v.amount),
+        amount: fromDisplay(Number(v.amount)),
         dayOfMonth: Number(v.day) || 1,
         category: v.category || null,
       };
@@ -319,7 +319,7 @@ export default function BudgetScreen() {
     } else if (sheet === 'charge') {
       const payload = {
         name: v.name,
-        amount: Number(v.amount),
+        amount: fromDisplay(Number(v.amount)),
         category: v.category || null,
         dayOfMonth: Number(v.day) || 1,
       };
@@ -329,7 +329,7 @@ export default function BudgetScreen() {
       const payload = {
         name: v.name,
         color: v.color || palette[0],
-        planned: Number(v.planned) || 0,
+        planned: fromDisplay(Number(v.planned) || 0),
         type: 'expense',
       };
       if (editingCat) await Categories.update(editingCat._id, payload);
@@ -344,7 +344,7 @@ export default function BudgetScreen() {
       await Transactions.create({
         type: 'expense',
         category: validating._id,
-        amount: Number(v.amount) || Number(validating.planned),
+        amount: v.amount ? fromDisplay(Number(v.amount)) : Number(validating.planned),
         budgetMonth: MONTH_KEY,
         note: v.note || t('budget.defaultNote', { month: MONTH_LABEL_FULL }),
       });
@@ -416,7 +416,7 @@ export default function BudgetScreen() {
           ? {
               name: editingItem.item.name || '',
               category: editingItem.item.category || null,
-              amount: editingItem.item.amount != null ? String(editingItem.item.amount) : '',
+              amount: editingItem.item.amount != null ? String(toDisplay(editingItem.item.amount)) : '',
               day: editingItem.item.dayOfMonth != null ? String(editingItem.item.dayOfMonth) : '',
             }
           : undefined,
@@ -447,7 +447,7 @@ export default function BudgetScreen() {
         editingItem?.kind === 'charge'
           ? {
               name: editingItem.item.name || '',
-              amount: editingItem.item.amount != null ? String(editingItem.item.amount) : '',
+              amount: editingItem.item.amount != null ? String(toDisplay(editingItem.item.amount)) : '',
               category: editingItem.item.category?._id || editingItem.item.category || null,
               day: editingItem.item.dayOfMonth != null ? String(editingItem.item.dayOfMonth) : '',
             }
@@ -478,7 +478,7 @@ export default function BudgetScreen() {
         ? {
             name: editingCat.name,
             color: editingCat.color,
-            planned: editingCat.planned ? String(editingCat.planned) : '',
+            planned: editingCat.planned ? String(toDisplay(editingCat.planned)) : '',
           }
         : { color: palette[0] },
       onDelete: editingCat ? () => removeItem('category', editingCat, closeSheet) : undefined,
@@ -503,10 +503,10 @@ export default function BudgetScreen() {
       ? {
           title: t('budget.sheet.validateTitle', { name: validating.name }),
           fields: [
-            { key: 'amount', label: t('budget.sheet.actualPaid'), type: 'number', placeholder: String(validating.planned) },
+            { key: 'amount', label: t('budget.sheet.actualPaid'), type: 'number', placeholder: String(toDisplay(validating.planned)) },
             { key: 'note', label: t('budget.sheet.note'), type: 'text', placeholder: t('budget.sheet.notePh') },
           ],
-          initial: { amount: String(validating.planned) },
+          initial: { amount: String(toDisplay(validating.planned)) },
         }
       : { title: '', fields: [] },
   };

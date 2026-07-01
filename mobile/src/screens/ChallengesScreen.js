@@ -13,7 +13,7 @@ import { SkeletonCard } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import Glyph from '../components/Glyph';
 import { colors, spacing, font, radius, palette, ff } from '../theme';
-import { euro } from '../format';
+import { euro, toDisplay, fromDisplay } from '../format';
 import { Challenges } from '../api';
 import { useT, registerTranslations } from '../i18n';
 
@@ -194,7 +194,7 @@ export default function ChallengesScreen() {
     await Challenges.create({
       title: v.name,
       description: '',
-      targetAmount: Number(v.target) || 0,
+      targetAmount: fromDisplay(Number(v.target) || 0),
       color: v.color || palette[1],
       period,
       deadline: addPeriod(new Date(), period).toISOString(),
@@ -209,7 +209,7 @@ export default function ChallengesScreen() {
     const period = v.period || editTarget.period || '1m';
     const patch = {
       title: v.name.trim(),
-      targetAmount: Number(v.target) || 0,
+      targetAmount: fromDisplay(Number(v.target) || 0),
       color: v.color || editTarget.color || palette[1],
       period,
     };
@@ -221,7 +221,7 @@ export default function ChallengesScreen() {
     // Montant actuel editable a la main UNIQUEMENT si le challenge n'a pas de
     // leads (sinon le total est calcule a partir des leads valides).
     if (!(editTarget.missions || []).length && v.current != null && v.current !== '') {
-      patch.currentAmount = Number(v.current) || 0;
+      patch.currentAmount = fromDisplay(Number(v.current) || 0);
     }
     await Challenges.update(editTarget._id, patch);
     toast.success(t('challenges.updated'));
@@ -234,7 +234,7 @@ export default function ChallengesScreen() {
     if (!v.name?.trim()) throw new Error(t('challenges.nameRequired'));
     await Challenges.addMission(pisteTarget._id, {
       title: v.name,
-      estimatedAmount: Number(v.estimated) || 0,
+      estimatedAmount: fromDisplay(Number(v.estimated) || 0),
     });
     setPisteTarget(null);
     load();
@@ -249,8 +249,8 @@ export default function ChallengesScreen() {
     const hasActual = v.actual != null && String(v.actual).trim() !== '';
     await Challenges.updateMission(challenge._id, mission._id, {
       title: v.name.trim(),
-      estimatedAmount: Number(v.estimated) || 0,
-      actualAmount: hasActual ? Number(v.actual) || 0 : null,
+      estimatedAmount: fromDisplay(Number(v.estimated) || 0),
+      actualAmount: hasActual ? fromDisplay(Number(v.actual) || 0) : null,
       done: hasActual,
     });
     setValidateTarget(null);
@@ -410,8 +410,8 @@ export default function ChallengesScreen() {
           editTarget
             ? {
                 name: editTarget.title || '',
-                current: editTarget.currentAmount != null ? String(editTarget.currentAmount) : '',
-                target: editTarget.targetAmount != null ? String(editTarget.targetAmount) : '',
+                current: editTarget.currentAmount != null ? String(toDisplay(editTarget.currentAmount)) : '',
+                target: editTarget.targetAmount != null ? String(toDisplay(editTarget.targetAmount)) : '',
                 period: editTarget.period || '1m',
                 color: editTarget.color || palette[1],
               }
@@ -452,11 +452,11 @@ export default function ChallengesScreen() {
                 name: validateTarget.mission.title || '',
                 estimated:
                   validateTarget.mission.estimatedAmount != null
-                    ? String(validateTarget.mission.estimatedAmount)
+                    ? String(toDisplay(validateTarget.mission.estimatedAmount))
                     : '',
                 actual:
                   validateTarget.mission.actualAmount != null
-                    ? String(validateTarget.mission.actualAmount)
+                    ? String(toDisplay(validateTarget.mission.actualAmount))
                     : '',
               }
             : {}
