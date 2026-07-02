@@ -241,6 +241,13 @@ export default function Glyph({ name, color = '#10131A', size = 22, strokeWidth 
           <Line x1="6.5" y1="14.5" x2="11" y2="14.5" />
         </G>
       );
+    case 'beauty': // Beaute (rouge a levres stylise)
+      return V(
+        <G {...p}>
+          <Rect x="8.5" y="11" width="7" height="9" rx="1.5" />
+          <Path d="M8.5 11 L9.5 5 L14.5 6 L15.5 11 Z" />
+        </G>
+      );
     case 'wheel': // Onglet Life : roue de la fortune (cercle + rayons)
       return V(
         <G {...p}>
@@ -273,6 +280,7 @@ export function glyphForCategory(name = '') {
   if (/(loisir|sortie|cinema|sport|jeu)/.test(n)) return 'ticket';
   if (/(sante|medecin|pharma|assur|mutuelle)/.test(n)) return 'heart';
   if (/(abonn|netflix|spotify|sub|telephone|internet)/.test(n)) return 'repeat';
+  if (/(beaut|cosmet|maquill|coiffeur|coiffure|esthet|parfum|\bspa\b|ongle|nail|makeup)/.test(n)) return 'beauty';
   if (/(shopping|vetement|achat|mode)/.test(n)) return 'bag';
   if (/(cadeau|gift|present)/.test(n)) return 'gift';
   if (/(salaire|salary|paie|paye)/.test(n)) return 'briefcase';

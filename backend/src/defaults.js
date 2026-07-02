@@ -11,6 +11,7 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Sante', color: '#14B8A6', type: 'expense' },
   { name: 'Abonnements', color: '#8B5CF6', type: 'expense' },
   { name: 'Shopping', color: '#F43F5E', type: 'expense' },
+  { name: 'Beaute', color: '#F472B6', type: 'expense' },
   { name: 'Cadeau', color: '#E879F9', type: 'expense' },
   { name: 'Etudes', color: '#0EA5E9', type: 'expense' },
   { name: 'Dettes', color: '#EF4444', type: 'expense' },

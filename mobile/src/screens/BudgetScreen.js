@@ -7,6 +7,7 @@ import Card from '../components/Card';
 import GradientCard from '../components/GradientCard';
 import FormSheet from '../components/FormSheet';
 import CategoryIcon from '../components/CategoryIcon';
+import ProgressBar from '../components/ProgressBar';
 import TimelineChart from '../components/TimelineChart';
 import DonutChart from '../components/DonutChart';
 import { glyphForCategory } from '../components/Glyph';
@@ -66,6 +67,9 @@ registerTranslations({
     'budget.paidMore': 'Paye {a} · +{b} de plus',
     'budget.paid': 'Paye {a}',
     'budget.planned': 'Prevu {a}',
+    'budget.remainingLabel': '{pct}% depense · reste {a}',
+    'budget.overBy': '{pct}% · depasse de {a}',
+    'budget.spentSub': 'Depense ce mois (sans budget)',
     'budget.validate': 'Valider',
     'budget.cancel': 'Annuler',
     'budget.errNameRequired': 'Donne un nom.',
@@ -149,6 +153,9 @@ registerTranslations({
     'budget.paidMore': 'Paid {a} · +{b} more',
     'budget.paid': 'Paid {a}',
     'budget.planned': 'Planned {a}',
+    'budget.remainingLabel': '{pct}% spent · {a} left',
+    'budget.overBy': '{pct}% · over by {a}',
+    'budget.spentSub': 'Spent this month (no budget)',
     'budget.validate': 'Confirm',
     'budget.cancel': 'Cancel',
     'budget.errNameRequired': 'Enter a name.',
@@ -276,6 +283,28 @@ export default function BudgetScreen() {
   const totalIncome = income.reduce((s, i) => (i.active !== false ? s + i.amount : s), 0);
   const totalCharges = charges.reduce((s, c) => (c.active !== false ? s + c.amount : s), 0);
   const dispo = totalIncome - totalCharges - totalPlanned;
+
+  // Depense reelle par categorie sur le mois affiche : somme des VRAIES
+  // transactions (type depense) datees de ce mois. Alimente le suivi de conso.
+  const spentByCat = useMemo(() => {
+    const VY = viewDate.getFullYear();
+    const VM = viewDate.getMonth();
+    const m = new Map();
+    for (const tx of transactions) {
+      if (tx.type !== 'expense') continue;
+      const d = new Date(tx.date);
+      if (isNaN(d) || d.getFullYear() !== VY || d.getMonth() !== VM) continue;
+      const cid = tx.category?._id || tx.category;
+      if (!cid) continue;
+      m.set(cid, (m.get(cid) || 0) + Number(tx.amount || 0));
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, monthOffset]);
+  // Categories sans budget mais avec des depenses ce mois (affichees sans %).
+  const spentNonBudget = expenseCats.filter(
+    (c) => !(Number(c.planned) > 0) && (spentByCat.get(c._id) || 0) > 0
+  );
 
   const closeSheet = () => {
     setSheet(null);
@@ -584,7 +613,7 @@ export default function BudgetScreen() {
           )}
         </Card>
 
-        {budgetCats.length > 0 ? (
+        {budgetCats.length > 0 || spentNonBudget.length > 0 ? (
           <>
             <View style={styles.sectionHeader}>
               <Text style={font.h2}>{t('budget.monthExpenses')}</Text>
@@ -613,13 +642,25 @@ export default function BudgetScreen() {
             ) : null}
             <Card padded={false} style={styles.listCard}>
               {budgetCats.map((c, idx) => (
-                <BudgetRow
+                <BudgetProgressRow
                   key={c._id}
                   cat={c}
-                  tx={paidByCat.get(c._id)}
-                  last={idx === budgetCats.length - 1}
-                  onValidate={() => openValidate(c)}
-                  onCancel={() => cancelValidate(paidByCat.get(c._id))}
+                  spent={spentByCat.get(c._id) || 0}
+                  last={idx === budgetCats.length - 1 && spentNonBudget.length === 0}
+                  onPress={() => openEditCat(c)}
+                  onLongPress={() => removeItem('category', c)}
+                />
+              ))}
+              {spentNonBudget.map((c, idx) => (
+                <Row
+                  key={c._id}
+                  name={c.name}
+                  sub={t('budget.spentSub')}
+                  amount={euro(spentByCat.get(c._id) || 0)}
+                  color={c.color}
+                  last={idx === spentNonBudget.length - 1}
+                  onPress={() => openEditCat(c)}
+                  onLongPress={() => removeItem('category', c)}
                 />
               ))}
             </Card>
@@ -716,42 +757,45 @@ function Row({ name, sub, amount, color, last, onPress, onLongPress }) {
   );
 }
 
-// Ligne de budget mensuel : etat "a payer" (bouton Valider) ou "paye" (montant + ecart).
-function BudgetRow({ cat, tx, last, onValidate, onCancel }) {
+// Ligne de suivi de budget : depense reelle (somme des transactions du mois)
+// vs budget prevu, avec barre de progression, % et reste (ou depassement).
+function BudgetProgressRow({ cat, spent, last, onPress, onLongPress }) {
   const t = useT();
-  const paid = !!tx;
-  const actual = paid ? Number(tx.amount) : 0;
-  const diff = paid ? Number(cat.planned) - actual : 0; // >0 economise, <0 depense en plus
-  const sub = paid
-    ? diff > 0
-      ? t('budget.paidSaved', { a: euro(actual), b: euro(diff) })
-      : diff < 0
-        ? t('budget.paidMore', { a: euro(actual), b: euro(-diff) })
-        : t('budget.paid', { a: euro(actual) })
-    : t('budget.planned', { a: euro(cat.planned) });
+  const planned = Number(cat.planned) || 0;
+  const pct = planned > 0 ? Math.round((spent / planned) * 100) : 0;
+  const remaining = planned - spent;
+  const over = remaining < 0;
   return (
-    <View
-      style={[styles.row, !last && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      style={({ pressed }) => [
+        styles.budgetRow,
+        !last && { borderBottomWidth: 1, borderBottomColor: colors.border },
+        pressed && { opacity: 0.6 },
+      ]}
     >
-      <CategoryIcon name={cat.name} color={cat.color} size={42} />
-      <View style={{ flex: 1 }}>
-        <Text style={font.title} numberOfLines={1}>
-          {cat.name}
-        </Text>
-        <Text style={[font.caption, paid && { color: diff < 0 ? colors.negative : colors.positive }]}>
-          {sub}
+      <View style={styles.budgetTop}>
+        <CategoryIcon name={cat.name} color={cat.color} size={42} />
+        <View style={{ flex: 1 }}>
+          <Text style={font.title} numberOfLines={1}>
+            {cat.name}
+          </Text>
+        </View>
+        <Text style={styles.amount} numberOfLines={1}>
+          {euro(spent)} / {euro(planned)}
         </Text>
       </View>
-      {paid ? (
-        <Pressable onPress={onCancel} hitSlop={8} style={styles.cancelBtn}>
-          <Text style={styles.cancelText}>{t('budget.cancel')}</Text>
-        </Pressable>
-      ) : (
-        <Pressable onPress={onValidate} hitSlop={8} style={styles.validateBtn}>
-          <Text style={styles.validateText}>{t('budget.validate')}</Text>
-        </Pressable>
-      )}
-    </View>
+      <ProgressBar
+        progress={planned > 0 ? Math.min(1, spent / planned) : 0}
+        color={over ? colors.negative : cat.color}
+      />
+      <Text style={[styles.budgetSub, { color: over ? colors.negative : colors.textMuted }]}>
+        {over
+          ? t('budget.overBy', { pct, a: euro(-remaining) })
+          : t('budget.remainingLabel', { pct, a: euro(remaining) })}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -793,6 +837,9 @@ const styles = StyleSheet.create({
   monthResetText: { color: colors.primary, fontFamily: ff.semibold, fontSize: 12 },
   listCard: { paddingHorizontal: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md },
+  budgetRow: { paddingVertical: spacing.md },
+  budgetTop: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+  budgetSub: { ...font.caption, marginTop: spacing.sm, fontFamily: ff.semibold },
   amount: { fontSize: 16, fontWeight: '700', color: colors.text },
   validateBtn: {
     backgroundColor: colors.primary,

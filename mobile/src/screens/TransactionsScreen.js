@@ -24,6 +24,7 @@ registerTranslations({
     'transactions.empty.title': 'Aucune transaction ce mois',
     'transactions.empty.text': 'Appuie sur + pour ajouter une depense ou un revenu sur ce mois.',
     'transactions.invalidAmount': 'Saisis un montant superieur a 0.',
+    'transactions.categoryRequired': 'Choisis une categorie pour cette depense.',
     'transactions.saved': 'Transaction ajoutee',
     'transactions.updated': 'Transaction modifiee',
     'transactions.sheet.new': 'Nouvelle transaction',
@@ -58,6 +59,7 @@ registerTranslations({
     'transactions.empty.title': 'No transactions this month',
     'transactions.empty.text': 'Tap + to add an expense or income for this month.',
     'transactions.invalidAmount': 'Enter an amount greater than 0.',
+    'transactions.categoryRequired': 'Choose a category for this expense.',
     'transactions.saved': 'Transaction added',
     'transactions.updated': 'Transaction updated',
     'transactions.sheet.new': 'New transaction',
@@ -174,6 +176,8 @@ export default function TransactionsScreen() {
       throw new Error(t('transactions.invalidAmount'));
     }
     const isIncome = v.type === 'income';
+    // Une depense doit toujours etre rattachee a une categorie (suivi du budget).
+    if (!isIncome && !v.category) throw new Error(t('transactions.categoryRequired'));
     // Pour un revenu, la "provenance" remplace la categorie de depense.
     const source = isIncome
       ? v.source === '__autre__'
